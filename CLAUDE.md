@@ -132,12 +132,12 @@ C:\RocketCFD\
 1. ✅ İskelet + config dosyaları.
 2. ✅ Geometri: 80 profil (y ≤ R, uzunluk = L, uç yuvarlatma teğetliği).
 3. ✅ Mesh: 80/80 Fluent kontrolünden geçti, Git'te.
-4. Çözücü: profil şeması + `02_fluent_solver.py` (izleme, sınıflandırma, checkpoint). İstanbul'da tekli test: 1 mesh × 1 hız + ayrıca Mach ≈ 1 tekli test.
-5. Orkestratör: SQLite şeması, kuyruk, kurtarma basamakları, kontrol tablosu.
-6. `rcfd.py` + `docs/runbook_supervisor.md`; İstanbul'da kasıtlı diverge testi (tekli koşu) ile kurtarma zinciri doğrulanır.
-7. Ön optimizasyon (02/08 rn, 03 L1/R1, 04 Rt, 19 a) → 20 mesh yeniden üretilir ve commit'lenir — Ankara'da.
-8. Ankara: kurulum, denetçi Claude Code, batch (1.600 koşu).
-9. Son işleme: Cd(v) → Cd(t) (lineer/PCHIP), K_kayıp, yardımcı ∫v²·Cd dt, sıralama ve grafikler.
+4. ✅ Çözücü: profiller, izleme, sınıflandırma, checkpoint; hızlandırma (enhanced-CASM + CFL 50) ölçümle seçildi.
+5. ✅ Orkestratör: SQLite, kuyruk, warm-start zinciri, hız oranı kuralı, kurtarma basamakları, çoklu işçi.
+6. ✅ `rcfd.py` + runbook; kurtarma zinciri gerçek bir ıraksamayla (v2) uçtan uca doğrulandı.
+7. ⏳ Ön optimizasyon: 92 aday mesh hazır (`meshes/preopt/`), 368 koşu — Ankara'da `preopt` kampanyası; sonra `--select` + 20 mesh.
+8. ⏳ Ankara: kurulum (`docs/ankara_setup.md`), denetçi Claude Code, batch.
+9. Son işleme (`04_postprocess.py`, henüz yazılmadı; `common/metrics.py` hazır): Cd(v) → Cd(t), K_kayıp, ∫v²·Cd dt, sıralama, grafikler.
 
 Her adımın sonunda doğrulama yapılmadan sonrakine geçilmez.
 
@@ -196,6 +196,23 @@ Reference Values, gaz modeli override edilemez (80 geometrinin Cd'leri karşıla
 - `solver_type = pressure-based` izin listesinden çıkarıldı (v241'de ayar yolu doğrulanmadı).
 - Kurtarma zinciri uçtan uca doğrulandı (v2): diverged → last_good → neighbor → hybrid → stalled → previous → done_flagged.
   Python hatası (`crash`) → oturum yeniden açılır (≤ 3), artık Fluent süreçleri temizlenir, koşu `needs_review` olur.
+
+### Çekirdek ölçeklenmesi ve çoklu işçi (2026-11-24, ölçümle)
+- v1 soğuk koşu: 5 çekirdek 215 s, 10 çekirdek 191 s → 2D ~100 bin hücrede ölçeklenme zayıf. **8 çekirdekte 2 işçi × 4 çekirdek**.
+- İşçiler geometriyi atomik sahiplenir (`claims` tablosu); ölü işçinin sahiplenmesi düşer ve yarım koşusu `retry_pending` olur.
+  İşçi adı `<kampanya>_w<i>`; kilit `data/orchestrator_<işçi>.lock`; kalp atışı `control.heartbeat:<işçi>`.
+- Fluent hiç açılamazsa (lisans) koşular cezalandırılmaz; işçi 3 denemeden sonra `worker_exit` olayıyla çıkar.
+- Ana kampanya yalnızca **kesin** geometrileri kuyruğa alır (`main_geoms(final_only)`): 02/03/04/08/19, ön optimizasyon o L için
+  `selected` yazana kadar dışarıda (60 sabit geometri). Seçim + mesh yenileme sonrası orkestratör yeniden başlatılınca eklenir.
+
+### Süre tahmini (Ankara, 2 işçi × 4 çekirdek; İstanbul ölçümlerinden ×1,13)
+| İş | Birim süre | Toplam |
+|---|---|---|
+| Ana: geometri başına (v1–v4 soğuk, v5–v11 warm ~3,2 dk; transonik/süpersonik warm ~4,5 dk) | ~86 dk | 80 × 86 dk ≈ 115 işçi-saati |
+| Ön optimizasyon: aday başına (v5, v10, v15 soğuk; v19 warm) | ~19,5 dk | 92 × 19,5 dk ≈ 30 işçi-saati |
+| **Toplam (2 işçi)** | | **≈ 72 saat ≈ 3 gün** |
+Transonik warm zinciri (v12→v18) orkestratörde henüz uçtan uca ölçülmedi (v17 warm testi: ~500 it); Ankara'nın ilk geometrisinde doğrulanır.
+Önerilen başlangıç: `start_batch.ps1 -Campaign preopt -Workers 1` + `start_batch.ps1 -Campaign main -Workers 1`.
 
 ### Çalıştırma ve araçlar
 - Tekli (İstanbul): `src\03_orchestrator.py --mode single --geom P16_L300 --vel 5` (DB'ye yazar, kurtarma basamaklarıyla).

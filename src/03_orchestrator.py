@@ -34,7 +34,7 @@ from common.solver_profile import (OverrideError, load_physics, profile_hash, re
 
 log = logging.getLogger("orchestrator")
 FIELDS_DIR = DATA_DIR / "fields"
-LOCK = DATA_DIR / "orchestrator.lock"
+MAX_LAUNCH_FAILS = 3
 MAX_ATTEMPTS = 8
 MAX_SESSION_RESTARTS = 3
 
@@ -53,10 +53,20 @@ def velocity_points(phys: dict) -> list[dict]:
     return pts
 
 
-def main_geoms() -> list[str]:
+def main_geoms(final_only: bool = True) -> list[str]:
+    """Ana kampanya geometrileri. final_only: serbest parametreli profiller (02/03/04/08/19) yalnızca ön optimizasyonla
+    o L için 'selected' değeri yazıldıysa dahil edilir — geçici (provisional) parametreli mesh'ler çözülmez."""
     npar = load_nose_params()
     from common.geometry import load_profile_defs
-    return [f"P{pid}_L{round(L * 1000):03d}" for L in npar["fixed"]["L_values"] for pid in sorted(load_profile_defs())]
+    free = npar["free_params"]
+    out = []
+    for L in npar["fixed"]["L_values"]:
+        key = f"L{round(L * 1000):03d}"
+        for pid in sorted(load_profile_defs()):
+            if final_only and pid in free and isinstance(free[pid], dict) and key not in free[pid].get("selected", {}):
+                continue
+            out.append(f"P{pid}_{key}")
+    return out
 
 
 def geo_meta(gid: str) -> dict:
@@ -87,22 +97,35 @@ def next_step_overrides(step: dict, prof: dict, current: dict) -> dict:
     return validate_overrides(out)
 
 
-def acquire_lock() -> None:
-    LOCK.parent.mkdir(parents=True, exist_ok=True)
-    if LOCK.exists():
-        try:
-            pid = int(LOCK.read_text().strip())
-            if psutil.pid_exists(pid) and "python" in psutil.Process(pid).name().lower():
-                raise SystemExit(f"Başka bir orkestratör çalışıyor (PID {pid}). Kilit: {LOCK}")
-        except (ValueError, psutil.Error):
-            pass
-    LOCK.write_text(str(os.getpid()))
-
-
-def release_lock() -> None:
+def pid_alive(pid: int | None) -> bool:
     try:
-        if LOCK.exists() and LOCK.read_text().strip() == str(os.getpid()):
-            LOCK.unlink()
+        return bool(pid) and psutil.pid_exists(pid) and "python" in psutil.Process(pid).name().lower()
+    except psutil.Error:
+        return False
+
+
+def lock_path(worker: str) -> Path:
+    return DATA_DIR / f"orchestrator_{worker}.lock"
+
+
+def acquire_lock(worker: str) -> None:
+    lp = lock_path(worker)
+    lp.parent.mkdir(parents=True, exist_ok=True)
+    if lp.exists():
+        try:
+            pid = int(lp.read_text().strip())
+            if pid_alive(pid):
+                raise SystemExit(f"'{worker}' işçisi zaten çalışıyor (PID {pid}). Kilit: {lp}")
+        except ValueError:
+            pass
+    lp.write_text(str(os.getpid()))
+
+
+def release_lock(worker: str) -> None:
+    lp = lock_path(worker)
+    try:
+        if lp.exists() and lp.read_text().strip() == str(os.getpid()):
+            lp.unlink()
     except OSError:
         pass
 
@@ -111,8 +134,8 @@ def release_lock() -> None:
 
 class Orchestrator:
     def __init__(self, campaign: str, mode: str, geoms: list[str] | None, vels: list[int] | None,
-                 cores: int | None, idle_hours: float):
-        self.campaign, self.mode = campaign, mode
+                 cores: int | None, idle_hours: float, worker: str = "w1"):
+        self.campaign, self.mode, self.worker = campaign, mode, worker
         self.geoms_filter = [g.upper() for g in geoms] if geoms else None
         self.vels_filter = vels
         self.cfg = load_machine_config()
@@ -134,11 +157,35 @@ class Orchestrator:
             args += list(self.vels_filter)
         return sql, args
 
-    def next_geom(self, con) -> str | None:
+    def _drop_dead_claims(self, con) -> None:
+        for c in con.execute("SELECT campaign, geom_id, worker, pid FROM claims").fetchall():
+            if not pid_alive(c["pid"]):
+                con.execute("DELETE FROM claims WHERE campaign=? AND geom_id=?", (c["campaign"], c["geom_id"]))
+                db.event(con, "WARNING", "claim_dropped", f"Ölü işçi {c['worker']} (PID {c['pid']}) sahiplenmesi düşürüldü",
+                         geom_id=c["geom_id"])
+
+    def claim_geom(self, con) -> str | None:
+        """Çözülecek bir geometriyi atomik olarak sahiplenir (çoklu işçi güvenli)."""
         f, a = self._filter_sql()
-        r = con.execute(f"SELECT geom_id FROM runs WHERE status IN ('pending','retry_pending'){f} "
-                        f"GROUP BY geom_id ORDER BY MAX(priority) DESC, geom_id LIMIT 1", a).fetchone()
+        con.execute("BEGIN IMMEDIATE")
+        try:
+            self._drop_dead_claims(con)
+            r = con.execute(f"SELECT geom_id FROM runs WHERE status IN ('pending','retry_pending'){f} "
+                            f"AND geom_id NOT IN (SELECT geom_id FROM claims WHERE campaign=?) "
+                            f"GROUP BY geom_id ORDER BY MAX(priority) DESC, geom_id LIMIT 1",
+                            a + [self.campaign]).fetchone()
+            if r:
+                con.execute("INSERT INTO claims (campaign, geom_id, worker, pid, ts) VALUES (?,?,?,?,?)",
+                            (self.campaign, r["geom_id"], self.worker, os.getpid(), db.now()))
+            con.execute("COMMIT")
+        except Exception:
+            con.execute("ROLLBACK")
+            raise
         return r["geom_id"] if r else None
+
+    def release_claim(self, gid: str) -> None:
+        with db.connect() as con:
+            con.execute("DELETE FROM claims WHERE campaign=? AND geom_id=? AND pid=?", (self.campaign, gid, os.getpid()))
 
     def next_run(self, con, gid: str):
         f, a = self._filter_sql()
@@ -146,8 +193,11 @@ class Orchestrator:
                            f"ORDER BY vel_idx LIMIT 1", [gid] + a).fetchone()
 
     def recover_stale(self, con) -> None:
-        stale = con.execute("SELECT run_id, geom_id FROM runs WHERE status='running' AND campaign=?",
-                            (self.campaign,)).fetchall()
+        """Yaşayan bir işçinin sahiplenmediği 'running' koşular yarım kalmıştır -> yeniden kuyruğa."""
+        self._drop_dead_claims(con)
+        stale = con.execute("SELECT run_id, geom_id FROM runs WHERE status='running' AND campaign=? "
+                            "AND geom_id NOT IN (SELECT geom_id FROM claims WHERE campaign=?)",
+                            (self.campaign, self.campaign)).fetchall()
         for r in stale:
             con.execute("UPDATE runs SET status='retry_pending', next_init='neighbor', next_decided_by='auto', "
                         "next_reason='orkestratör yeniden başlatıldı (yarım kalan koşu)', updated_at=? WHERE run_id=?",
@@ -155,8 +205,9 @@ class Orchestrator:
             db.event(con, "WARNING", "stale_run", "Yarım kalan koşu yeniden kuyruğa alındı", r["run_id"], r["geom_id"])
 
     def heartbeat(self, con, what: str) -> None:
-        db.set_control(con, "heartbeat", json.dumps({"ts": db.now(), "pid": os.getpid(), "machine": self.machine,
-                                                     "current": what}))
+        db.set_control(con, f"heartbeat:{self.worker}", json.dumps({
+            "ts": db.now(), "pid": os.getpid(), "machine": self.machine, "worker": self.worker,
+            "cores": self.cores, "current": what}))
 
     # ------------------------------------------------------------------ kontrol
     def check_control(self, con) -> str:
@@ -168,7 +219,8 @@ class Orchestrator:
 
     # ------------------------------------------------------------------ ana döngü
     def run(self) -> int:
-        acquire_lock()
+        acquire_lock(self.worker)
+        launch_fails = 0
         try:
             with db.connect() as con:
                 if self.campaign == "main":   # diğer kampanyaların koşularını kendi betikleri kaydeder (ör. 00_preopt.py)
@@ -179,8 +231,8 @@ class Orchestrator:
                     if added:
                         db.event(con, "INFO", "queue", f"{added} koşu kuyruğa eklendi ({self.campaign})")
                 self.recover_stale(con)
-                db.event(con, "INFO", "start", f"Orkestratör başladı: mode={self.mode} campaign={self.campaign} "
-                                               f"cores={self.cores} machine={self.machine} pid={os.getpid()}")
+                db.event(con, "INFO", "start", f"Orkestratör başladı: worker={self.worker} mode={self.mode} "
+                                               f"campaign={self.campaign} cores={self.cores} machine={self.machine} pid={os.getpid()}")
             idle_since = None
             while True:
                 with db.connect() as con:
@@ -193,10 +245,16 @@ class Orchestrator:
                         self.heartbeat(con, "paused")
                         time.sleep(30)
                         continue
-                    gid = self.next_geom(con)
+                    gid = self.claim_geom(con)
                     if gid is None:
                         left = con.execute("SELECT COUNT(*) n FROM runs WHERE status='needs_review' AND campaign=?",
                                            (self.campaign,)).fetchone()["n"]
+                        others = con.execute("SELECT COUNT(*) n FROM claims WHERE campaign=? AND pid<>?",
+                                             (self.campaign, os.getpid())).fetchone()["n"]
+                        if self.mode != "single" and others:
+                            self.heartbeat(con, f"bekliyor (diğer işçiler {others} geometride çalışıyor)")
+                            time.sleep(60)
+                            continue
                         if self.mode == "single" or left == 0:
                             db.event(con, "INFO", "complete", f"Kuyruk boş. needs_review: {left}")
                             return 0
@@ -210,12 +268,26 @@ class Orchestrator:
                         time.sleep(60)
                         continue
                     idle_since = None
-                self.process_geom(gid)
+                try:
+                    status = self.process_geom(gid)
+                finally:
+                    self.release_claim(gid)
+                if status == "launch_failed":
+                    launch_fails += 1
+                    if launch_fails >= MAX_LAUNCH_FAILS:
+                        with db.connect() as con:
+                            db.event(con, "ERROR", "worker_exit",
+                                     f"{self.worker}: Fluent art arda {launch_fails} kez açılamadı (lisans/kurulum?); işçi çıkıyor")
+                        return 3
+                    time.sleep(60)
+                else:
+                    launch_fails = 0
         finally:
-            release_lock()
+            release_lock(self.worker)
 
     # ------------------------------------------------------------------ geometri (oturum)
-    def process_geom(self, gid: str) -> None:
+    def process_geom(self, gid: str) -> str:
+        """Dönüş: 'ok' | 'launch_failed' (Fluent hiç açılamadı — koşular cezalandırılmaz)."""
         msh = mesh_path(self.campaign, gid)
         if not msh.exists():
             with db.connect() as con:
@@ -223,14 +295,16 @@ class Orchestrator:
                 con.execute(f"UPDATE runs SET status='mesh_error', updated_at=? WHERE geom_id=? "
                             f"AND status IN ('pending','retry_pending'){f}", [db.now(), gid] + a)
                 db.event(con, "ERROR", "mesh_error", f"Mesh dosyası yok: {msh}", geom_id=gid)
-            return
+            return "ok"
         meta = geo_meta(gid)
         restarts = 0
+        opened_once = False
         while restarts <= MAX_SESSION_RESTARTS:
             sess_dir = LOG_DIR / "sessions" / f"{gid}_{time.strftime('%Y%m%d-%H%M%S')}"
             sess_dir.mkdir(parents=True, exist_ok=True)
             try:
                 with fluent_solver(self.cfg, cwd=sess_dir, processor_count=self.cores) as solver:
+                    opened_once = True
                     solver.tui.file.start_transcript(str(sess_dir / "fluent.trn"))
                     setup_physics(solver, msh, meta, self.phys, sess_dir)
                     with db.connect() as con:
@@ -240,31 +314,35 @@ class Orchestrator:
                     while True:
                         with db.connect() as con:
                             if self.check_control(con) != "run":
-                                return
+                                return "ok"
+                            self.heartbeat(con, f"{gid} oturumu açık")
                             run = self.next_run(con, gid)
                         if run is None:
-                            return
+                            return "ok"
                         prev_ok = self.execute_run(solver, dict(run), meta, prev_ok)
                         if self.mode == "single":
                             with db.connect() as con:
                                 r = con.execute("SELECT status FROM runs WHERE run_id=?", (run["run_id"],)).fetchone()
                             if r["status"] not in db.RUNNABLE:
-                                return
+                                return "ok"
             except SessionBroken as exc:
                 restarts += 1
                 with db.connect() as con:
                     db.event(con, "ERROR", "session_restart", f"Fluent oturumu yeniden açılıyor ({restarts}/{MAX_SESSION_RESTARTS}): {exc}",
                              geom_id=gid)
             except Exception as exc:  # noqa: BLE001 — kurulum/oturum hatası
-                restarts += 1
                 log.exception("%s oturum hatası", gid)
                 with db.connect() as con:
                     db.event(con, "ERROR", "session_error", f"{type(exc).__name__}: {str(exc)[:300]}", geom_id=gid)
+                if not opened_once:          # Fluent hiç açılamadı: lisans/kurulum sorunu — koşulara dokunma
+                    return "launch_failed"
+                restarts += 1
         with db.connect() as con:
             f, a = self._filter_sql()
             con.execute(f"UPDATE runs SET status='needs_review', updated_at=? WHERE geom_id=? "
                         f"AND status IN ('pending','retry_pending','running'){f}", [db.now(), gid] + a)
             db.event(con, "ERROR", "geom_abandoned", "Oturum tekrar tekrar çöktü; geometri denetçiye bırakıldı", geom_id=gid)
+        return "ok"
 
     # ------------------------------------------------------------------ tek koşu + kurtarma
     def _fields_dir(self, gid: str) -> Path:
@@ -435,6 +513,7 @@ def main() -> int:
     ap.add_argument("--geoms", nargs="*", help="batch: geometri filtresi")
     ap.add_argument("--vels", nargs="*", type=int, help="batch: hız filtresi")
     ap.add_argument("--cores", type=int)
+    ap.add_argument("--worker", default="w1", help="işçi adı (çoklu işçi: w1, w2, ...)")
     ap.add_argument("--idle-hours", type=float, default=12.0,
                     help="batch: kuyruk boşalıp yalnızca needs_review kalınca denetçiyi bekleme süresi")
     args = ap.parse_args()
@@ -455,7 +534,8 @@ def main() -> int:
         geoms, vels = [args.geom], [args.vel]
     else:
         geoms, vels = args.geoms, args.vels
-    orch = Orchestrator(args.campaign, args.mode, geoms, vels, args.cores, args.idle_hours)
+    worker = "single" if args.mode == "single" else args.worker
+    orch = Orchestrator(args.campaign, args.mode, geoms, vels, args.cores, args.idle_hours, worker)
     return orch.run()
 
 

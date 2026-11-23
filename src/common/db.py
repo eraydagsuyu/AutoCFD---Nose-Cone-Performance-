@@ -61,6 +61,10 @@ CREATE TABLE IF NOT EXISTS events (
     run_id INTEGER, geom_id TEXT, message TEXT
 );
 CREATE TABLE IF NOT EXISTS control (key TEXT PRIMARY KEY, value TEXT, updated_at TEXT);
+CREATE TABLE IF NOT EXISTS claims (
+    campaign TEXT NOT NULL, geom_id TEXT NOT NULL, worker TEXT, pid INTEGER, ts TEXT,
+    PRIMARY KEY (campaign, geom_id)
+);
 CREATE INDEX IF NOT EXISTS ix_runs_status ON runs(campaign, status);
 CREATE INDEX IF NOT EXISTS ix_att_run ON attempts(run_id);
 """

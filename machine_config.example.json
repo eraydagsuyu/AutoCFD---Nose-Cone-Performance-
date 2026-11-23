@@ -4,6 +4,7 @@
   "awp_root": "C:\\Program Files\\ANSYS Inc\\v241",
   "fluent_exe": "C:\\Program Files\\ANSYS Inc\\v241\\fluent\\ntbin\\win64\\fluent.exe",
   "fluent_cores": 8,
+  "workers": 1,
   "python_exe": "C:\\RocketCFD\\.venv\\Scripts\\python.exe",
   "solver_interface": "pyfluent",
   "allow_batch": false

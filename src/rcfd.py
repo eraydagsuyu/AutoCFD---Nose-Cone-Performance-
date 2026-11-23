@@ -86,12 +86,14 @@ def cmd_status(con, args) -> None:
             eta += t * r["k"]
     if eta:
         print(f"Tahmini kalan süre (sıralı, ek deneme hariç): {eta / 3600:.1f} saat")
-    hb = db.get_control(con, "heartbeat")
-    if hb:
-        h = json.loads(hb)
+    for row in con.execute("SELECT key, value FROM control WHERE key LIKE 'heartbeat%' ORDER BY key").fetchall():
+        h = json.loads(row["value"])
         age = time.time() - time.mktime(time.strptime(h["ts"], "%Y-%m-%d %H:%M:%S"))
-        flag = "" if age < 900 else "   <-- UYARI: 15 dk'dan eski, orkestratör çalışıyor mu?"
-        print(f"Kalp atışı: {h['ts']} ({age / 60:.0f} dk önce) pid={h['pid']} {h['machine']}: {h['current']}{flag}")
+        flag = "" if age < 900 else "   <-- UYARI: 15 dk'dan eski, işçi çalışıyor mu?"
+        print(f"İşçi {h.get('worker', '?'):<6} {h['ts']} ({age / 60:.0f} dk önce) pid={h['pid']} "
+              f"{h.get('cores', '?')} çekirdek: {h['current']}{flag}")
+    for cl in con.execute("SELECT * FROM claims WHERE campaign=?", (c,)).fetchall():
+        print(f"  sahiplenilmiş: {cl['geom_id']} <- {cl['worker']} (PID {cl['pid']}, {cl['ts']})")
     for k in ("pause", "stop_after_current"):
         if db.get_control(con, k) == "1":
             print(f"Kontrol: {k} AKTİF")

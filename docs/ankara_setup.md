@@ -94,31 +94,46 @@ notepad machine_config.json   # veya: Claude Code'a düzenletin
   "ansys_version": "24.1",
   "awp_root": "C:\\Program Files\\ANSYS Inc\\v241",
   "fluent_exe": "C:\\Program Files\\ANSYS Inc\\v241\\fluent\\ntbin\\win64\\fluent.exe",
-  "fluent_cores": 8,
+  "fluent_cores": 4,
+  "workers": 2,
   "python_exe": "C:\\RocketCFD\\.venv\\Scripts\\python.exe",
   "solver_interface": "pyfluent",
   "allow_batch": true
 }
 ```
-`fluent_cores` = A1'deki **fizik** çekirdek sayısı. Sonra testi tekrar çalıştırın:
+**İşçi düzeni:** `workers × fluent_cores` = A1'deki **fizik** çekirdek sayısı. 2D ~100 bin hücrede çekirdek ölçeklenmesi zayıf
+(İstanbul: 5 çekirdek 215 s, 10 çekirdek 191 s) → 8 çekirdekte **2 işçi × 4 çekirdek** toplam verimi ~1,8× artırır.
+Her işçi ayrı bir Fluent çözücü lisansı kullanır (B3b'de kontrol). Sonra testi tekrar çalıştırın:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\setup_env.ps1
 ```
 **Kontrol:** `SONUÇ: BAŞARILI` ve "artık süreç yok".
 
-### B3. Duman testi (tek koşu, ~8 dk)
+### B3. Duman testi (tek koşu, ~3 dk)
 ```powershell
 .venv\Scripts\python.exe src\03_orchestrator.py --mode single --geom P16_L300 --vel 5
 .venv\Scripts\python.exe src\rcfd.py inspect P16_L300:5
 ```
-**Kontrol:** `done`, Cd ≈ 0,364 (İstanbul: 0,3638). Süreyi not edin (İstanbul 10 çekirdek: 7,3 dk).
+**Kontrol:** `done`, Cd ≈ 0,3633 (İstanbul: 0,3633, 900 it). Süreyi not edin (İstanbul 10 çekirdek: 2,8 dk).
+
+### B3b. İki eş zamanlı Fluent lisans kontrolü (~1 dk)
+```powershell
+$p1 = Start-Process .venv\Scripts\python.exe -ArgumentList "src\tools\check_env.py" -PassThru -NoNewWindow
+Start-Sleep 5
+.venv\Scripts\python.exe src\tools\check_env.py
+$p1.WaitForExit()
+```
+**Kontrol:** İkisi de `SONUÇ: BAŞARILI` → `"workers": 2`. İkincisi lisans hatası verirse → `"workers": 1, "fluent_cores": 8`.
 
 ### B4. Toplu koşuyu başlatma
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\start_batch.ps1
 .venv\Scripts\python.exe src\rcfd.py status
 ```
-SSH'ı kapatın, 2 dk sonra yeniden bağlanıp `rcfd status` → kalp atışı güncel olmalı (SSH kopmasına dayanıklılık testi).
+SSH'ı kapatın, 2 dk sonra yeniden bağlanıp `rcfd status` → tüm işçilerin kalp atışı güncel olmalı (SSH kopmasına dayanıklılık testi).
+
+**Önerilen sıra:** önce ön optimizasyon kampanyası (serbest parametreli 20 ana mesh buna bağlı), aynı anda ana kampanyanın
+sabit 60 geometrisi. Ayrıntı ve süre tahmini: `CLAUDE.md` Bölüm 10 ("Süre tahmini").
 
 ### B5. Denetçi (Claude Code) — Ankara'da
 ```powershell

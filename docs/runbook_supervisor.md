@@ -52,9 +52,13 @@ Koşul: aynı düzeltme aynı rejimde ≥ 3 farklı geometride başarılı olduy
 - `skip` kullanmak: yalnızca 3+ farklı denetçi denemesi başarısız olduysa ve gerekçe yazarak.
 
 ## 5. Orkestratör sağlığı
-- Kalp atışı eski + `data\orchestrator.lock` içindeki PID yaşamıyorsa: orkestratör ölmüş.
-  `logs\batch_*.console.log` ve `logs\orchestrator.log` son satırlarını oku, sonra yeniden başlat:
-  `powershell -ExecutionPolicy Bypass -File scripts\start_batch.ps1` — yarım kalan koşu otomatik yeniden kuyruğa alınır.
+- Birden çok işçi olabilir (`main_w1`, `preopt_w1`, ...). `rcfd status` her işçinin kalp atışını ve sahiplendiği geometriyi gösterir.
+- Bir işçinin kalp atışı eski + `data\orchestrator_<işçi>.lock` içindeki PID yaşamıyorsa: işçi ölmüş.
+  `logs\batch_*_<işçi>.console.log` ve `logs\orchestrator.log` son satırlarını oku, sonra yeniden başlat:
+  `powershell -ExecutionPolicy Bypass -File scripts\start_batch.ps1 -Campaign <kampanya> -Workers 1`
+  (çalışan işçiler atlanır; ölü işçinin sahiplenmesi düşer ve yarım kalan koşusu otomatik yeniden kuyruğa alınır).
+- `worker_exit` olayı: Fluent açılamadı (çoğunlukla lisans). İkinci işçi lisans yüzünden çıktıysa tek işçiyle devam edilir — kullanıcıya bildir.
+- Bilinen davranış: düşük hızlarda (v2–v4) hız oranı > 1,3 olduğundan otomatik **soğuk** başlatma yapılır — bu normaldir.
 - Kalp atışı eski ama PID yaşıyor: Fluent tek koşuda takılmış olabilir (`timeout_s` dolunca kendisi keser). 2 saatten uzun sürerse kullanıcıya bildir.
 - Disk: `data\fields\` geometri başına ~10–30 MB, `logs\runs\` başarısız denemelerin checkpoint'lerini tutar. Boş alan < 10 GB ise kullanıcıya bildir.
 
@@ -62,6 +66,17 @@ Koşul: aynı düzeltme aynı rejimde ≥ 3 farklı geometride başarılı olduy
 - `mesh_error`, `geom_abandoned` olayları; lisans hataları; disk dolması.
 - Bir rejimde koşuların > %20'si `needs_review`.
 - Fizik/mesh/domain değişikliği gerektiğini düşündüğün her durum (öneri yaz, uygulama).
+
+## 6b. Ön optimizasyon bitince (kullanıcı onayıyla)
+`rcfd --campaign preopt status` tüm koşuları `done/done_flagged/skipped` gösterdiğinde kullanıcıya bildir. Onay gelince:
+```
+.venv\Scripts\python.exe src\00_preopt.py --select          # nose_params.json 'selected' + docs/preopt_report.md
+.venv\Scripts\python.exe src\01_mesh_gen.py --geom <betiğin yazdırdığı 20 geometri>
+.venv\Scripts\python.exe src\tools\check_mesh_fluent.py meshes\P02_L200.msh.gz ...   # 20 mesh
+git add config\nose_params.json docs meshes && git commit -m "Ön optimizasyon seçimi + 20 mesh" && git push
+powershell -ExecutionPolicy Bypass -File scripts\start_batch.ps1 -Campaign main -Workers 1   # yeni 20 geometri kuyruğa eklenir
+```
+Ana kampanyanın işçisi çalışıyorsa önce `rcfd stop`, mevcut koşu bitince yeniden başlat (yeni geometriler başlangıçta eklenir).
 
 ## 7. İlerleme raporu
 `rcfd export` → `docs/results/` (runs ve Cd matrisi CSV). Günde bir kez commit + push:

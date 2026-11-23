@@ -47,8 +47,11 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("files", nargs="*")
     ap.add_argument("--all", action="store_true")
+    ap.add_argument("--dir", default=None, help="--all için klasör (varsayılan meshes/; ör. meshes/preopt)")
+    ap.add_argument("--report", default="fluent_mesh_check.csv")
     args = ap.parse_args()
-    files = sorted(MESH_DIR.glob("P*_L*.msh.gz")) if args.all else [Path(f) for f in args.files]
+    src_dir = Path(args.dir) if args.dir else MESH_DIR
+    files = sorted(src_dir.glob("P*_L*.msh.gz")) if args.all else [Path(f) for f in args.files]
     if not files:
         ap.error("Kontrol edilecek dosya yok")
 
@@ -77,7 +80,7 @@ def main() -> int:
             print(f"[{i}/{len(files)}] {gid}: minOQ={oq}  {'OK' if r['ok'] else 'HATA'}", flush=True)
 
     df = pd.DataFrame(rows)
-    out = DOCS_DIR / "mesh" / "fluent_mesh_check.csv"
+    out = DOCS_DIR / "mesh" / args.report
     if out.exists():
         old = pd.read_csv(out)
         df = pd.concat([old[~old["geom_id"].isin(df["geom_id"])], df]).sort_values("geom_id")
