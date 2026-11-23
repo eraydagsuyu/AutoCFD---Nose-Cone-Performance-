@@ -121,6 +121,7 @@ class Orchestrator:
         self.policy = load_policy()
         self.idle_hours = idle_hours
         self.machine = self.cfg.get("machine_name", "?")
+        self.session_vel: float | None = None
 
     # ------------------------------------------------------------------ kuyruk
     def _filter_sql(self) -> tuple[str, list]:
@@ -235,6 +236,7 @@ class Orchestrator:
                     with db.connect() as con:
                         db.event(con, "INFO", "session_open", f"Fluent oturumu açıldı ({self.cores} çekirdek)", geom_id=gid)
                     prev_ok = False
+                    self.session_vel = None
                     while True:
                         with db.connect() as con:
                             if self.check_control(con) != "run":
@@ -265,9 +267,31 @@ class Orchestrator:
             db.event(con, "ERROR", "geom_abandoned", "Oturum tekrar tekrar çöktü; geometri denetçiye bırakıldı", geom_id=gid)
 
     # ------------------------------------------------------------------ tek koşu + kurtarma
-    def _init_for(self, run: dict, gid: str, prev_ok: bool, last_workdir: Path | None) -> tuple[str, Path | None]:
+    def _fields_dir(self, gid: str) -> Path:
+        return FIELDS_DIR / (gid if self.campaign == "main" else f"{self.campaign}/{gid}")
+
+    def _auto_warm_ok(self, gid: str, prev_ok: bool, v_new: float, max_ratio: float) -> tuple[bool, str]:
+        """Otomatik warm-start yalnızca kaynak alanın hızı yeterince yakınsa: max(v/v0, v0/v) ≤ max_ratio."""
+        if prev_ok and self.session_vel:
+            v0 = self.session_vel
+        else:
+            meta = self._fields_dir(gid) / "latest.json"
+            if not meta.exists():
+                return False, "kaynak alan yok"
+            idx = json.loads(meta.read_text(encoding="utf-8"))["vel_idx"]
+            v0 = {p["index"]: p["velocity_ms"] for p in load_velocities()}[idx]
+        ratio = max(v_new / v0, v0 / v_new)
+        return ratio <= max_ratio, f"hız oranı {ratio:.2f} (sınır {max_ratio})"
+
+    def _init_for(self, run: dict, gid: str, prev_ok: bool, last_workdir: Path | None,
+                  v_new: float | None = None, max_ratio: float | None = None) -> tuple[str, Path | None]:
+        if not run.get("next_init") and v_new and max_ratio:
+            ok, why = self._auto_warm_ok(gid, prev_ok, v_new, max_ratio)
+            if not ok:
+                log.info("  warm-start yerine soğuk başlatma: %s", why)
+                return "hybrid", None
         want = run.get("next_init") or ("previous" if prev_ok else "neighbor")
-        latest = FIELDS_DIR / (gid if self.campaign == "main" else f"{self.campaign}/{gid}") / "latest.dat.h5"
+        latest = self._fields_dir(gid) / "latest.dat.h5"
         if want == "previous":
             return ("previous", None) if (prev_ok or run.get("next_init") == "previous") else self._init_for(
                 {**run, "next_init": "neighbor"}, gid, False, last_workdir)
@@ -295,7 +319,7 @@ class Orchestrator:
         while True:
             with db.connect() as con:
                 run = dict(con.execute("SELECT * FROM runs WHERE run_id=?", (rid,)).fetchone())
-                if run["n_attempts"] >= MAX_ATTEMPTS:
+                if run["n_attempts"] - (run["budget_base"] or 0) >= MAX_ATTEMPTS:
                     con.execute("UPDATE runs SET status='needs_review', updated_at=? WHERE run_id=?", (db.now(), rid))
                     db.event(con, "WARNING", "needs_review", f"Deneme sınırı ({MAX_ATTEMPTS}) doldu", rid, gid)
                     return False
@@ -306,8 +330,9 @@ class Orchestrator:
                     con.execute("UPDATE runs SET status='needs_review', updated_at=? WHERE run_id=?", (db.now(), rid))
                     db.event(con, "ERROR", "bad_override", str(exc), rid, gid)
                 return False
-            init_method, init_file = self._init_for(run, gid, prev_ok, last_workdir)
             prof, regime = resolve_profile(fs.mach, overrides)
+            init_method, init_file = self._init_for(run, gid, prev_ok, last_workdir,
+                                                    fs.velocity, prof["warm_max_velocity_ratio"])
             attempt_no = run["n_attempts"] + 1
             workdir = LOG_DIR / "runs" / f"{gid}_v{run['vel_idx']:02d}" / f"a{attempt_no}_{time.strftime('%Y%m%d-%H%M%S')}"
             decided_by = run["next_decided_by"] or "auto"
@@ -349,18 +374,20 @@ class Orchestrator:
                                                    f"{res.message}".strip(), rid, gid)
             if ok:
                 self._save_fields(solver, gid, run["vel_idx"], workdir)
+                self.session_vel = fs.velocity
                 return True
 
             # ---- başarısız: politika basamağı
             ladder = self.policy.get(outcome, [])
             with db.connect() as con:
-                k = con.execute("SELECT COUNT(*) n FROM attempts WHERE run_id=? AND outcome=? AND decided_by='auto'",
-                                (rid, outcome)).fetchone()["n"] - 1
-                if decided_by != "auto" or k >= len(ladder):
+                # Basamak indeksi: son denetçi/insan müdahalesinden (budget_base) sonraki aynı sınıftaki başarısızlıklar.
+                # Denetçi denemesi başarısız olursa otomatik basamaklar onun override'larını taban alarak devam eder.
+                base = run["budget_base"] or 0
+                k = con.execute("SELECT COUNT(*) n FROM attempts WHERE run_id=? AND outcome=? AND attempt_no>?",
+                                (rid, outcome, base)).fetchone()["n"] - 1
+                if k >= len(ladder):
                     con.execute("UPDATE runs SET status='needs_review', updated_at=? WHERE run_id=?", (db.now(), rid))
-                    db.event(con, "WARNING", "needs_review",
-                             f"{outcome}: {res.message} — otomatik basamaklar bitti" if decided_by == "auto"
-                             else f"{outcome}: {res.message} — denetçi denemesi başarısız", rid, gid)
+                    db.event(con, "WARNING", "needs_review", f"{outcome}: {res.message} — otomatik basamaklar bitti", rid, gid)
                     if broken:
                         raise SessionBroken(res.message)
                     return False

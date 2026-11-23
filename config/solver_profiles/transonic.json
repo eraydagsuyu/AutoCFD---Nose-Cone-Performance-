@@ -1,12 +1,12 @@
 {
-  "note": "0,7 ≤ M < 1,15 — şok oluşumu ve konum hareketi; düşük CFL, uzun rampa, uzun pencere.",
+  "note": "0,7 ≤ M < 1,15 — enhanced-CASM + CFL 50: v17 warm Cd 500 it'te oturdu (CFL 5'te ~4000 it). Soğuk başlatmada düşük CFL'den uzun rampa.",
   "mach_min": 0.7,
   "mach_max": 1.15,
   "first_order_iters": 500,
   "courant_start": 0.5,
-  "courant_end": 5.0,
+  "courant_end": 50.0,
   "courant_ramp_iters": 800,
   "min_iters": 1500,
-  "max_iters": 8000,
+  "max_iters": 4000,
   "conv_window": 500
 }

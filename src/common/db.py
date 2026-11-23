@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS runs (
     cd             REAL,
     cd_flagged     INTEGER DEFAULT 0,
     n_attempts     INTEGER DEFAULT 0,
+    budget_base    INTEGER DEFAULT 0,
     next_overrides TEXT,
     next_init      TEXT,
     next_decided_by TEXT,
@@ -65,6 +66,13 @@ CREATE INDEX IF NOT EXISTS ix_att_run ON attempts(run_id);
 """
 
 
+def _migrate(con) -> None:
+    """Eski veritabanlarına yeni sütunları ekler (idempotent)."""
+    cols = {r["name"] for r in con.execute("PRAGMA table_info(runs)").fetchall()}
+    if "budget_base" not in cols:
+        con.execute("ALTER TABLE runs ADD COLUMN budget_base INTEGER DEFAULT 0")
+
+
 def now() -> str:
     return time.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -78,6 +86,7 @@ def connect(path: Path = DB_PATH):
     con.execute("PRAGMA busy_timeout=60000")
     try:
         con.executescript(SCHEMA)
+        _migrate(con)
         yield con
     finally:
         con.close()

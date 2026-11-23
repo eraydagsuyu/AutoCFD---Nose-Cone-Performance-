@@ -184,6 +184,18 @@ Reference Values, gaz modeli override edilemez (80 geometrinin Cd'leri karşıla
 - **Ortalama yakınsaması** (`mean_window`, `mean_rel_change`, `mean_max_amp`): kalıcı salınımlı transonik akışlar için. Soğuk başlatmada
   yavaş iz gelişimi platolarında erken durabilir (2,6 % hata gözlendi) → eşikler sıkı (500 it / %0,1) ve asıl hızlandırma warm-start.
 - Warm-start profil anahtarları `warm_*`: yakınsamış alandan başlarken 1. derece aşaması atlanır, kısa CFL rampası.
+- **Hızlandırma kararı (2026-11-24, ölçümle):** tüm rejimlerde `casm = enhanced-casm`, `courant_end = 50`.
+  v17 warm-start karşılaştırması (referans Cd 0,4913): CFL 5 → ~4000 it; CFL 20 → ~1000 it; CASM+CFL 5 → ~1500 it;
+  **enhanced-CASM + CFL 50 → ~500 it** (8× hızlanma). Doğrulama: v05 soğuk 900 it/3,3 dk (Cd 0,3633, önceki ayarla fark %0,14),
+  v19/v20 süpersonik warm 1401 it/4,4 dk, ıraksama yok. Iraksarsa kurtarma basamakları CFL'yi yarıya indirir.
+- **Düşük Mach + büyük hız sıçraması:** v1 (M 0,062) → v2 (×2 hız) warm-start; CASM açık/kapalı, CFL 1,5–50 **hepsi ıraksadı**;
+  soğuk başlatma sorunsuz. Kural: `warm_max_velocity_ratio = 1,3` — kaynak alanın hızıyla oran > 1,3 ise otomatik soğuk (hybrid)
+  başlatma (pratikte v2, v3, v4 soğuk; v5 ve sonrası warm). Orkestratör `_auto_warm_ok`.
+- **Iraksama ölçütü mutlak olmalı** (`div_residual_abs = 10`, `div_cd_abs = 50`, NaN/Inf): göreli residual artışı warm-start'ta
+  yanlış alarm üretti (yakınsamış alanın küçük residual'ları hız değişince normal olarak birkaç mertebe yükselir).
+- `solver_type = pressure-based` izin listesinden çıkarıldı (v241'de ayar yolu doğrulanmadı).
+- Kurtarma zinciri uçtan uca doğrulandı (v2): diverged → last_good → neighbor → hybrid → stalled → previous → done_flagged.
+  Python hatası (`crash`) → oturum yeniden açılır (≤ 3), artık Fluent süreçleri temizlenir, koşu `needs_review` olur.
 
 ### Çalıştırma ve araçlar
 - Tekli (İstanbul): `src\03_orchestrator.py --mode single --geom P16_L300 --vel 5` (DB'ye yazar, kurtarma basamaklarıyla).

@@ -243,7 +243,6 @@ def run_attempt(solver, prof: dict, workdir: Path, fresh_init: bool = True,
     it = 0
     switched = prof["first_order_iters"] <= 0
     switch_it = 0 if switched else None
-    res0: dict[str, float] = {}
     hist_rows = []
     outcome, msg = None, ""
     cd_final = None
@@ -281,14 +280,17 @@ def run_attempt(solver, prof: dict, workdir: Path, fresh_init: bool = True,
 
         resid = read_residuals(solver)
         last = {k: float(v[-1]) for k, v in resid.items() if len(v)}
-        for k, v in last.items():
-            if k not in res0 and v > 0:
-                res0[k] = v
-        growth = {k: math.log10(last[k] / res0[k]) for k in last if k in res0 and last[k] > 0}
         hist_rows.append({"iter": it, "courant": c, "cd": float(cd[-1]),
                           **{f"res_{k}": v for k, v in last.items()}})
-        if growth and max(growth.values()) > prof["div_residual_growth_orders"]:
-            outcome, msg = "diverged", f"residual {max(growth, key=growth.get)} {max(growth.values()):.1f} mertebe arttı"
+        # Iraksama: MUTLAK ölçütler. (Göreli artış kullanılmaz: warm-start yakınsamış alandan, çok küçük residual'larla
+        # başlar; hız değişince residual'ların birkaç mertebe yükselmesi normaldir — yanlış alarm üretir.)
+        bad = {k: v for k, v in last.items() if not math.isfinite(v) or v > prof["div_residual_abs"]}
+        if bad:
+            k = max(bad, key=lambda x: bad[x] if math.isfinite(bad[x]) else float("inf"))
+            outcome, msg = "diverged", f"residual {k} = {bad[k]:.3g} > {prof['div_residual_abs']}"
+            break
+        if abs(float(cd[-1])) > prof["div_cd_abs"]:
+            outcome, msg = "diverged", f"|Cd| = {abs(float(cd[-1])):.3g} > {prof['div_cd_abs']}"
             break
 
         if it % prof["checkpoint_interval"] < n:

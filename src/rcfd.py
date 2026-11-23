@@ -200,8 +200,9 @@ def cmd_export(con, args) -> None:
 # --------------------------------------------------------------------------- müdahale
 
 def _schedule(con, run, overrides: dict, init: str | None, who: str, reason: str) -> None:
+    # budget_base: deneme bütçesi ve otomatik basamaklar bu müdahaleden itibaren yeniden sayılır
     con.execute("UPDATE runs SET status='retry_pending', next_overrides=?, next_init=?, next_decided_by=?, "
-                "next_reason=?, updated_at=? WHERE run_id=?",
+                "next_reason=?, budget_base=n_attempts, updated_at=? WHERE run_id=?",
                 (json.dumps(overrides), init, who, reason, db.now(), run["run_id"]))
     db.event(con, "INFO", f"{who}_retry", f"init={init} override={overrides} gerekçe: {reason}",
              run["run_id"], run["geom_id"])
@@ -219,7 +220,6 @@ def cmd_retry(con, args) -> None:
     except OverrideError as exc:
         raise SystemExit(f"REDDEDİLDİ (fizik kilidi / izin listesi): {exc}")
     _schedule(con, run, ov, args.init, _who(args), args.reason)
-    con.execute("UPDATE runs SET n_attempts=MIN(n_attempts, ?) WHERE run_id=?", (4, run["run_id"]))
     print(f"[{run['run_id']}] {run['geom_id']}:{run['vel_idx']} yeniden kuyrukta: init={args.init} override={ov}")
 
 
@@ -242,7 +242,6 @@ def cmd_requeue(con, args) -> None:
     con.execute("BEGIN")
     for r in rows:
         _schedule(con, r, ov, args.init, _who(args), args.reason)
-        con.execute("UPDATE runs SET n_attempts=MIN(n_attempts, ?) WHERE run_id=?", (4, r["run_id"]))
     con.execute("COMMIT")
     print(f"{len(rows)} koşu yeniden kuyruğa alındı.")
 

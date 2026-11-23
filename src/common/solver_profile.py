@@ -15,7 +15,7 @@ REGIMES = ("subsonic", "transonic", "supersonic")
 
 # Sayısal izin listesi: anahtar -> (tip, alt sınır, üst sınır | izinli değerler)
 ALLOWED_OVERRIDES: dict[str, tuple] = {
-    "solver_type": (str, ("density-based-implicit", "pressure-based")),
+    "solver_type": (str, ("density-based-implicit",)),   # pressure-based yolu doğrulanmadı (v241 ayar hatası)
     "flux_type": (str, ("Roe-FDS", "AUSM")),
     "casm": (str, ("disable-casm", "casm", "enhanced-casm")),
     "init_method": (str, ("hybrid", "fmg", "previous", "last_good", "file")),
@@ -35,10 +35,12 @@ ALLOWED_OVERRIDES: dict[str, tuple] = {
     "warm_courant_start": (float, 0.05, 50.0),
     "warm_courant_ramp_iters": (int, 0, 10000),
     "warm_min_iters": (int, 100, 50000),
+    "warm_max_velocity_ratio": (float, 1.0, 10.0),
     "mean_window": (int, 100, 5000),
     "mean_rel_change": (float, 1e-5, 0.01),
     "mean_max_amp": (float, 1e-4, 0.02),
-    "div_residual_growth_orders": (float, 1.0, 6.0),
+    "div_residual_abs": (float, 0.1, 1e6),
+    "div_cd_abs": (float, 1.0, 1e6),
     "stall_check_iters": (int, 200, 20000),
     "timeout_s": (int, 300, 86400),
 }
