@@ -11,6 +11,7 @@ negatif hacimli ve yüzleri "left-handed" raporlar.
 """
 from __future__ import annotations
 
+import gzip
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -129,4 +130,9 @@ def write_fluent_msh(path: Path, xy: np.ndarray, cells: list[np.ndarray], interi
         lines.append(f"(45 ({zone_ids[z]} {bc_types[z]} {z})())")
 
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("\n".join(lines) + "\n", encoding="ascii")
+    text = "\n".join(lines) + "\n"
+    if path.suffix == ".gz":          # Fluent .msh.gz dosyasını doğrudan okur (~%68 daha küçük)
+        with gzip.open(path, "wt", encoding="ascii", compresslevel=9) as fh:
+            fh.write(text)
+    else:
+        path.write_text(text, encoding="ascii")

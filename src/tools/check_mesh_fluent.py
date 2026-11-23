@@ -48,7 +48,7 @@ def main() -> int:
     ap.add_argument("files", nargs="*")
     ap.add_argument("--all", action="store_true")
     args = ap.parse_args()
-    files = sorted(MESH_DIR.glob("P*_L*.msh")) if args.all else [Path(f) for f in args.files]
+    files = sorted(MESH_DIR.glob("P*_L*.msh.gz")) if args.all else [Path(f) for f in args.files]
     if not files:
         ap.error("Kontrol edilecek dosya yok")
 
@@ -59,7 +59,8 @@ def main() -> int:
     with fluent_solver(load_machine_config(), cwd=work, processor_count=2) as solver:
         solver.tui.define.models.axisymmetric("yes")
         for i, msh in enumerate(files, 1):
-            trn = work / f"{msh.stem}.trn"
+            gid = msh.name.split(".")[0]
+            trn = work / f"{gid}.trn"
             trn.unlink(missing_ok=True)
             solver.tui.file.start_transcript(str(trn))
             solver.tui.file.read_case(str(msh.resolve()))
@@ -71,9 +72,9 @@ def main() -> int:
             oq = r["min_orthogonal_quality"]
             r["ok"] = (oq is not None and oq >= thr and not r["non_positive_volume"]
                        and not r["left_handed_faces"] and r["zones_ok"])
-            r["geom_id"] = msh.stem
+            r["geom_id"] = gid
             rows.append(r)
-            print(f"[{i}/{len(files)}] {msh.stem}: minOQ={oq}  {'OK' if r['ok'] else 'HATA'}", flush=True)
+            print(f"[{i}/{len(files)}] {gid}: minOQ={oq}  {'OK' if r['ok'] else 'HATA'}", flush=True)
 
     df = pd.DataFrame(rows)
     out = DOCS_DIR / "mesh" / "fluent_mesh_check.csv"

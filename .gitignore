@@ -2,7 +2,7 @@
 machine_config.json
 
 # Ağır / üretilen veriler
-meshes/
+# meshes/: yalnızca .msh.gz Git'te tutulur (Ankara'da yeniden üretim gerekmesin diye)
 data/
 logs/
 *.msh

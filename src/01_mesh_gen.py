@@ -5,7 +5,7 @@ Kullanım:
   .venv\\Scripts\\python.exe src\\01_mesh_gen.py --all [--preview] [--skip-existing]
 
 Çıktılar:
-  meshes\\<geom_id>.msh             Fluent ASCII mesh (kalite kapısını geçenler)
+  meshes\\<geom_id>.msh.gz          Fluent ASCII mesh, gzip (kalite kapısını geçenler; Git'te tutulur)
   docs\\mesh\\preview_<id>.png       (--preview) yakın görünüm + çarpıklık renkleri
   docs\\mesh\\mesh_report.csv        her koşuda güncellenen özet tablo
   logs\\mesh_gen.log
@@ -52,7 +52,7 @@ def mesh_one(gid: str, npar: dict, defs: dict, preview: bool) -> dict:
     if not geo.checks["ok"]:
         raise ValueError(f"Geometri doğrulaması başarısız: {geo.checks}")
     t0 = time.time()
-    res = build_mesh(geo, npar["fixed"]["body_length"], MESH_DIR / f"{gid}.msh",
+    res = build_mesh(geo, npar["fixed"]["body_length"], MESH_DIR / f"{gid}.msh.gz",
                      preview_png=(DOCS_DIR / "mesh" / f"preview_{gid}.png") if preview else None)
     row = asdict(res)
     row["path"] = str(res.path) if res.path else ""
@@ -84,7 +84,7 @@ def main() -> int:
     old = pd.read_csv(REPORT) if REPORT.exists() else pd.DataFrame()
     rows = []
     for i, gid in enumerate(ids, 1):
-        if args.skip_existing and (MESH_DIR / f"{gid}.msh").exists():
+        if args.skip_existing and (MESH_DIR / f"{gid}.msh.gz").exists():
             log.info("[%d/%d] %s atlandı (mevcut)", i, len(ids), gid)
             continue
         try:

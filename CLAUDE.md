@@ -70,7 +70,9 @@ Kurallar:
 ## 5. Mesh Kuralları (hibrit: yapısal BL + Gmsh üçgen → Fluent .msh)
 - Sınır isimleri sabit sözleşmedir: **`inlet`, `outlet`, `farfield`, `wall_rocket`, `axis`** (hücre bölgesi: `fluid`). Değiştirilemez.
   BC tipleri dosyaya gömülü: inlet/outlet/farfield = `pressure-far-field`, wall_rocket = `wall`, axis = `axis`.
-- Gövde arkası (taban) `wall_rocket`'e dahildir. Çıktı **Fluent'in kendi ASCII `.msh` formatı** (`meshes/<ID>.msh`), `src/common/fluent_msh.py` yazar.
+- Gövde arkası (taban) `wall_rocket`'e dahildir. Çıktı **Fluent'in kendi ASCII `.msh` formatı, gzip'li** (`meshes/<ID>.msh.gz`, Fluent doğrudan okur), `src/common/fluent_msh.py` yazar.
+- **Mesh'ler Git'te tutulur** (80 × ~2,3 MB ≈ 180 MB; kullanıcı kararı: Ankara'da yeniden üretimle vakit kaybedilmesin). Geometri/mesh ayarı değişirse ilgili `.msh.gz` yeniden üretilip commit'lenir.
+  Ön optimizasyon sonrası serbest parametreli profiller (02, 03, 04, 08, 19 → 20 mesh) yeniden üretilecektir.
   PDF'teki "Fluent MSH2 okur" bilgisi yanlıştır (MSH2 Gmsh formatıdır) — Gmsh çıktısı Fluent'e doğrudan verilmez.
 - **Gmsh BoundaryLayer alanı kullanılmaz**: duvarın eksenle buluştuğu noktada bozuk fan üretiyor (minSJ ≈ 0,001). Sınır tabakası
   `src/common/mesher.py` içinde yapısal olarak örülür: duvar düğümleri → dış normal boyunca geometrik katmanlar
@@ -82,6 +84,8 @@ Kurallar:
 - Kalite kapısı: Python'da negatif alan = 0 ve max equiangle skewness ≤ 0,90; Fluent'te min orthogonal quality ≥ 0,05
   (`src/tools/check_mesh_fluent.py`). Geçemeyen mesh kaydedilmez → `mesh_error`.
 - Referans sonuç P16_L300: 104 bin hücre, max skewness 0,75 (fan ilk katmanı), Fluent min OQ 0,31, `mesh/check` temiz.
+- **Doğrulanmış durum (2026-11-23):** 80/80 mesh Fluent 2024 R1 `mesh/check` + `mesh/quality` geçti; min OQ = 0,14 (tümü), 92–128 bin hücre. Rapor: `docs/mesh/fluent_mesh_check.csv`.
+- Meplat (04) köşesinde duvar boyutu `tip_region` (0,3 mm) olmalı; `tip_arc` (50 µm) kullanılırsa BL üst kenarında aralık sıçrar ve OQ < 0,05 olur.
 
 ## 6. Çalışma Ortamı ve Makine Kuralları
 - Python her zaman `.venv\Scripts\python.exe` ile çalıştırılır; yollar `src/common/config.py`'den alınır. Yeni makinede kurulum: `scripts\setup_env.ps1`.
@@ -95,7 +99,7 @@ Kurallar:
 ```
 C:\RocketCFD\
 ├── CLAUDE.md
-├── .gitignore                    # machine_config.json, meshes/, data/, logs/ hariç
+├── .gitignore                    # machine_config.json, data/, logs/, düz *.msh hariç
 ├── machine_config.example.json
 ├── machine_config.json           # Git'e girmez
 ├── requirements.txt
@@ -118,7 +122,8 @@ C:\RocketCFD\
 │   └── 04_postprocess.py
 ├── scripts\                      # start_batch.ps1, status.ps1
 ├── docs\                         # preopt_report.md, sonuç raporları
-├── meshes\  data\  logs\         # Git'e girmez
+├── meshes\                      # <ID>.msh.gz — Git'te tutulur
+├── data\  logs\                # Git'e girmez
 ```
 
 ## 8. Geliştirme Sırası (küçük, test edilebilir adımlar)
@@ -135,5 +140,5 @@ Her adımın sonunda doğrulama yapılmadan sonrakine geçilmez.
 ## 9. Yapma Listesi
 - Fluent'i GUI ile açma; yerelde batch başlatma.
 - Sınır isimlerini, `R`, `L` değerlerini veya `rn`'yi kendi başına değiştirme.
-- Sabit yol gömme; `machine_config.json`'u, `meshes/`, `data/`, `logs/` klasörlerini commit'leme.
+- Sabit yol gömme; `machine_config.json`'u, `data/`, `logs/` klasörlerini ve sıkıştırılmamış `.msh` dosyalarını commit'leme.
 - Reference Values güncellemesini atlama.
