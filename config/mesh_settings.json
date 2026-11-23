@@ -1,0 +1,44 @@
+{
+  "note": "2D eksenel simetrik hibrit mesh ayarları (yapısal BL + Gmsh üçgen). Birimler: m. Domain ölçüleri toplam roket boyu Lb = L + body_length cinsindendir.",
+  "domain": {
+    "upstream_factor": 2.0,
+    "radial_factor": 2.0,
+    "downstream_factor": 5.0
+  },
+  "boundary_layer": {
+    "first_height": 1.0e-6,
+    "growth_ratio": 1.2,
+    "thickness": 0.004,
+    "comment": "y+ ~ 1 @ 418 m/s (u_tau ~ 15 m/s). k-omega SST, duvar fonksiyonu yok. Katman sayısı ve gerçek oran kodda hesaplanır."
+  },
+  "fan": {
+    "threshold_deg": 20.0,
+    "max_sector_deg": 15.0,
+    "comment": "Normal açısı bu eşikten küçük kırıklarda açıortay normali, büyük dışbükey köşelerde fan kullanılır."
+  },
+  "tangential_growth": 1.1,
+  "body_split": 0.1,
+  "sizes": {
+    "tip_arc": 5.0e-5,
+    "tip_region": 3.0e-4,
+    "nose_wall": 1.0e-3,
+    "body_wall": 3.0e-3,
+    "base_corner": 5.0e-4,
+    "base_wall": 1.5e-3,
+    "near_box": 4.0e-3,
+    "wake_box": 5.0e-3,
+    "far": 0.30
+  },
+  "refinement_boxes": {
+    "near_nose_up": 0.15,
+    "near_nose_radial": 0.25,
+    "wake_length": 1.0,
+    "wake_radial": 0.12
+  },
+  "quality": {
+    "max_skewness": 0.90,
+    "comment": "Equiangle skewness (Python). Fluent tarafında ayrıca min orthogonal quality kontrol edilir.",
+    "fluent_min_orthogonal_quality": 0.05
+  },
+  "output_format": "Fluent ASCII .msh (common/fluent_msh.py)"
+}

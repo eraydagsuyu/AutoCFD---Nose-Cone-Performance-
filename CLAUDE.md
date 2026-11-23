@@ -67,11 +67,21 @@ Kurallar:
 - Transonik bölge (Mach ≈ 0,9–1,1) zor yakınsar: daha yüksek iterasyon limiti / CFL rampası tanımlanır.
 - `.dat.h5` yalnızca her mesh'in en düşük ve en yüksek hızı için saklanır.
 
-## 5. Mesh Kuralları (Gmsh, Python API)
-- Sınır isimleri sabit sözleşmedir: **`inlet`, `outlet`, `farfield`, `wall_rocket`, `axis`** (yüzey: `fluid`). Değiştirilemez, Gmsh ve Fluent kodunda aynı yazılır.
-- Gövde arkası (taban) `wall_rocket`'e dahildir. Çıktı **MSH2** formatı (`meshes/<ID>.msh`).
-- Duvarda inflation (sınır tabaka), ucun ve iz bölgesinin sıklaştırılması.
-- Kalite kapısı: min ortogonal kalite ve max çarpıklık eşiği aşılırsa mesh kaydedilmez, `mesh_error` olarak işaretlenir ve loglanır.
+## 5. Mesh Kuralları (hibrit: yapısal BL + Gmsh üçgen → Fluent .msh)
+- Sınır isimleri sabit sözleşmedir: **`inlet`, `outlet`, `farfield`, `wall_rocket`, `axis`** (hücre bölgesi: `fluid`). Değiştirilemez.
+  BC tipleri dosyaya gömülü: inlet/outlet/farfield = `pressure-far-field`, wall_rocket = `wall`, axis = `axis`.
+- Gövde arkası (taban) `wall_rocket`'e dahildir. Çıktı **Fluent'in kendi ASCII `.msh` formatı** (`meshes/<ID>.msh`), `src/common/fluent_msh.py` yazar.
+  PDF'teki "Fluent MSH2 okur" bilgisi yanlıştır (MSH2 Gmsh formatıdır) — Gmsh çıktısı Fluent'e doğrudan verilmez.
+- **Gmsh BoundaryLayer alanı kullanılmaz**: duvarın eksenle buluştuğu noktada bozuk fan üretiyor (minSJ ≈ 0,001). Sınır tabakası
+  `src/common/mesher.py` içinde yapısal olarak örülür: duvar düğümleri → dış normal boyunca geometrik katmanlar
+  (h1 = 1 µm, oran ≈ 1,2, kalınlık 4 mm, 37 katman), küçük kırıklarda açıortay normali, dışbükey köşelerde (taban köşesi, meplat köşesi) fan.
+  Uç ve taban-eksen kolonları eksen üzerindedir. Dış bölge: Gmsh Frontal-Delaunay üçgen; BL üst kenarı sabit sınırdır.
+- Gmsh `Threshold` alanlarında **`StopAtDistMax = 1` zorunlu** — yoksa SizeMax tüm alana uygulanır ve mesh milyarlarca hücreye gider.
+- Fluent yüz yönü (2D): n0→n1 yönünde c0 **solda**. Ters yazılırsa tüm hücreler negatif hacimli görünür.
+- Ayarlar `config/mesh_settings.json`'da. Domain: önde 2·Lb, radyal 2·Lb, arkada 5·Lb (Lb = L + 2 m).
+- Kalite kapısı: Python'da negatif alan = 0 ve max equiangle skewness ≤ 0,90; Fluent'te min orthogonal quality ≥ 0,05
+  (`src/tools/check_mesh_fluent.py`). Geçemeyen mesh kaydedilmez → `mesh_error`.
+- Referans sonuç P16_L300: 104 bin hücre, max skewness 0,75 (fan ilk katmanı), Fluent min OQ 0,31, `mesh/check` temiz.
 
 ## 6. Çalışma Ortamı ve Makine Kuralları
 - Python her zaman `.venv\Scripts\python.exe` ile çalıştırılır; yollar `src/common/config.py`'den alınır. Yeni makinede kurulum: `scripts\setup_env.ps1`.
@@ -96,7 +106,9 @@ C:\RocketCFD\
 ├── src\
 │   ├── common\                   # config.py (yollar + json okuma), fluent_session.py (güvenli oturum),
 │   │                             # geometry.py (denklem → profil, uç sınıflandırma, 1 mm yay, L' iterasyonu)
+│   │                             # mesher.py (yapısal BL + Gmsh üçgen), fluent_msh.py (Fluent .msh yazıcı)
 │   ├── tools\check_geometry.py   # 80 geometri doğrulaması + docs/geometry/ grafikleri
+│   ├── tools\check_mesh_fluent.py # .msh -> headless Fluent mesh/check + quality
 │   ├── tools\prepare_inputs.py   # raw -> config/ + nose_cones/ dönüşümü (tekrarlanabilir)
 │   ├── tools\check_env.py        # paket + headless Fluent başlat/kapat testi
 │   ├── 00_preopt.py              # rn (02/08), L1/R1, Rt, a ön optimizasyonu

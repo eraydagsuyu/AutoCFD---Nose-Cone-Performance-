@@ -28,3 +28,6 @@ desktop.ini
 # Kökteki ham dosya kopyaları (asılları inputs/raw/ altında)
 /Nosecone_eq.txt
 /Vt_graph.txt
+
+# Mesh önizlemeleri (yeniden üretilebilir, büyük)
+docs/mesh/preview_*.png

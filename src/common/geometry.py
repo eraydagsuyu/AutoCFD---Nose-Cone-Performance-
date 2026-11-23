@@ -215,6 +215,7 @@ class NoseGeometry:
     x: np.ndarray          # uç x=0 ... omuz x=L
     y: np.ndarray
     n_arc_pts: int         # x/y dizisinin başındaki yay noktası sayısı (0 = yay yok)
+    kink_idx: list[int] = field(default_factory=list)   # eğim süreksizliği olan nokta indeksleri (ör. 03'te L1)
     checks: dict = field(default_factory=dict)
 
     @property
@@ -244,25 +245,34 @@ def build_geometry(pdef: ProfileDef, L: float, R: float, free: dict, rn_mesh: fl
     else:
         raise RuntimeError(f"{pdef.pid}: L' iterasyonu yakınsamadı")
 
+    kinks_sharp = [params["L1"]] if pdef.pid == "03" else []
+
+    def with_kinks(xa: np.ndarray) -> np.ndarray:
+        """Kırık noktalarını örnek dizisine tam olarak ekler (spline'ın köşeyi yuvarlamaması için)."""
+        for k in kinks_sharp:
+            if xa[0] < k < xa[-1]:
+                xa = np.unique(np.append(xa, k))
+        return xa
+
     xs, ys = [], []
     if arc:
         th_t = math.atan2(arc.yt, arc.xt - arc.xc)          # teğet noktasının açısı
         ang = np.linspace(math.pi, th_t, n_arc)
         xs.append(arc.xc + arc.rn * np.cos(ang))
         ys.append(arc.rn * np.sin(ang))
-        xc_ = _cluster(arc.xt, Ls, n_curve)[1:]
+        xc_ = with_kinks(_cluster(arc.xt, Ls, n_curve)[1:])
         xs.append(xc_)
         ys.append(f(xc_))
         n_arc_pts = n_arc
     elif tip.kind == "flat":
-        xc_ = _cluster(x_tip, Ls, n_curve)
+        xc_ = with_kinks(_cluster(x_tip, Ls, n_curve))
         xs.append(np.array([x_tip]))
         ys.append(np.array([0.0]))
         xs.append(xc_)
         ys.append(f(xc_))
         n_arc_pts = 0
     else:
-        xc_ = _cluster(x_tip, Ls, n_curve)
+        xc_ = with_kinks(_cluster(x_tip, Ls, n_curve))
         yv = f(xc_)
         yv[0] = 0.0
         xs.append(xc_)
@@ -271,7 +281,8 @@ def build_geometry(pdef: ProfileDef, L: float, R: float, free: dict, rn_mesh: fl
 
     x = np.concatenate(xs) - x_start
     y = np.concatenate(ys)
-    geo = NoseGeometry(pdef.pid, pdef.name, L, R, Ls, params, tip, arc, x, y, n_arc_pts)
+    kink_idx = [int(np.argmin(np.abs(x - (k - x_start)))) for k in kinks_sharp]
+    geo = NoseGeometry(pdef.pid, pdef.name, L, R, Ls, params, tip, arc, x, y, n_arc_pts, kink_idx)
     geo.checks = validate(geo, f)
     return geo
 
