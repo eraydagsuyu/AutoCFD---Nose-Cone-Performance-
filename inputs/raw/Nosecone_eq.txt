@@ -5,7 +5,7 @@ DENKLEMLER ---
 04 Kesik (meplatlı) konik             ==>> y = Rt + (R - Rt)*x/L;
 05 Tanjant ogive                      ==>> y = sqrt(rho^2 - (L - x).^2) + R - rho;
 06 Sekant ogive (ince, ρ=1.5ρt)       ==>> y = sqrt((1.5*rho)^2 - (1.5*rho*cos(acos(sqrt(L^2+R^2)/(3*rho)) - atan(R/L)) - x).^2) - 1.5*rho*sin(acos(sqrt(L^2+R^2)/(3*rho)) - atan(R/L));
-07 Sekant ogive (şişkin, ρ=0.75ρt)    ==>> y = sqrt((0.75*rho)^2 - (0.75*rho*cos(acos(sqrt(L^2+R^2)/(1.5*rho)) - atan(R/L)) - x).^2) - 0.75*rho*sin(acos(sqrt(L^2+R^2)/(1.5*rho)) - atan(R/L));
+07 Sekant ogive (orta, ρ=1.25ρt)      ==>> y = sqrt((1.25*rho)^2 - (1.25*rho*cos(acos(sqrt(L^2+R^2)/(2.5*rho)) - atan(R/L)) - x).^2) - 1.25*rho*sin(acos(sqrt(L^2+R^2)/(2.5*rho)) - atan(R/L));
 08 Küresel körleştirilmiş tanjant ogive ==>> y = (x < xto).*sqrt(max(rn^2 - (x - x0o).^2, 0)) + (x >= xto).*(sqrt(rho^2 - (L - x).^2) + R - rho);
 09 Eliptik                            ==>> y = R*sqrt(x.*(2*L - x))/L;
 10 Parabolik (K = 1)                  ==>> y = R*(2*(x/L) - 1.00*(x/L).^2)/(2 - 1.00);

@@ -39,7 +39,8 @@ Kurallar:
 - `xtc, x0c` (02) ve `xto, x0o` (08): `rn` küresinin koni/ogive'e teğet noktası ve küre merkezi — kodda analitik olarak hesaplanır.
 - Profil ID formatı: `P{NN}_L{LLL}` (ör. `P16_L300`). Bu ID SQLite'taki `nose_cone_id`'dir.
 - Geometri yalnızca `src/common/geometry.py` ile üretilir (`build_geometry` / `build_all`). Serbest parametre: `nose_params.json` → `selected["L200"]` varsa o, yoksa `provisional`.
-- Doğrulanmış durum (2026-11-23): 80/80 geometri geçerli, uç sınıflandırması beklenenle birebir; uzunluk hatası < 0,001 µm.
+- Doğrulanmış durum (2026-11-23): 80/80 geometri geçerli, uç sınıflandırması beklenenle birebir; uzunluk hatası < 0,001 µm; R'yi aşan geometri yok.
+- **Kullanıcı kararı:** Orijinal 07 (şişkin sekant ogive, ρ = 0,75ρt) R'yi ~1 mm aştığı için **ρ = 1,25ρt orta sekant ogive** ile değiştirildi (`inputs/raw/Nosecone_eq.txt` güncellendi; kökteki orijinal dosya değiştirilmedi). ρ < ρt olan sekant ogive'ler R'yi aşar — kullanılmaz.
 
 ### Ön optimizasyonla belirlenecek serbest parametreler (Claude belirler)
 | Profil | Parametre | Aday aralığı (başlangıç) | Kısıt |

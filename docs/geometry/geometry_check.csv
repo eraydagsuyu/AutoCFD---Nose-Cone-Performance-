@@ -5,7 +5,7 @@ P03_L200,Bi-konik,sharp,sharp,True,1.0,0.0,True,202.1113,0.0001,0.0,49.0,False,0
 P04_L200,Kesik (meplatlı) konik,flat,flat,True,0.0,,False,200.0,0.0,0.0,49.0,False,0.0,True
 P05_L200,Tanjant ogive,sharp,sharp,True,1.0,0.0,True,201.184,0.0,0.0,49.0,False,0.0,True
 P06_L200,"Sekant ogive (ince, ρ=1.5ρt)",sharp,sharp,True,1.0,0.0,True,201.6004,0.0,0.0,49.0,False,0.0,True
-P07_L200,"Sekant ogive (şişkin, ρ=0.75ρt)",sharp,sharp,True,1.0,0.0,True,200.8878,0.0,0.0,50.105,True,0.0,True
+P07_L200,"Sekant ogive (orta, ρ=1.25ρt)",sharp,sharp,True,1.0,0.0,True,201.4152,0.0,0.0,49.0,False,0.0,True
 P08_L200,Küresel körleştirilmiş tanjant ogive,blunt,blunt,True,0.5,4.9,False,206.2364,0.0001,0.0,49.0,False,0.0,True
 P09_L200,Eliptik,blunt,blunt,True,0.5,12.005,False,200.0,0.0,0.0,49.0,False,0.0,True
 P10_L200,Parabolik (K = 1),sharp,sharp,True,1.0,0.0,True,201.2931,0.0,0.0,49.0,False,0.0,True
@@ -25,7 +25,7 @@ P03_L300,Bi-konik,sharp,sharp,True,1.0,0.0,True,303.5363,0.0,0.0,49.0,False,0.0,
 P04_L300,Kesik (meplatlı) konik,flat,flat,True,0.0,,False,300.0,0.0,0.0,49.0,False,0.0,True
 P05_L300,Tanjant ogive,sharp,sharp,True,1.0,0.0,True,302.1796,0.0,0.0,49.0,False,0.0,True
 P06_L300,"Sekant ogive (ince, ρ=1.5ρt)",sharp,sharp,True,1.0,0.0,True,302.8062,0.0001,0.0,49.0,False,0.0,True
-P07_L300,"Sekant ogive (şişkin, ρ=0.75ρt)",sharp,sharp,True,1.0,0.0,True,301.733,0.0,0.0,50.058,True,0.0,True
+P07_L300,"Sekant ogive (orta, ρ=1.25ρt)",sharp,sharp,True,1.0,0.0,True,302.5276,0.0,0.0,49.0,False,0.0,True
 P08_L300,Küresel körleştirilmiş tanjant ogive,blunt,blunt,True,0.5,4.9,False,311.4484,0.0,0.0,49.0,False,0.0,True
 P09_L300,Eliptik,blunt,blunt,True,0.5,8.003,False,300.0,0.0,0.0,49.0,False,0.0,True
 P10_L300,Parabolik (K = 1),sharp,sharp,True,1.0,0.0,True,302.2567,0.0,0.0,49.0,False,0.0,True
@@ -45,7 +45,7 @@ P03_L400,Bi-konik,sharp,sharp,True,1.0,0.0,True,404.9877,0.0,0.0,49.0,False,0.0,
 P04_L400,Kesik (meplatlı) konik,flat,flat,True,0.0,,False,400.0,0.0,0.0,49.0,False,0.0,True
 P05_L400,Tanjant ogive,sharp,sharp,True,1.0,0.0,True,403.1956,0.0,0.0,49.0,False,0.0,True
 P06_L400,"Sekant ogive (ince, ρ=1.5ρt)",sharp,sharp,True,1.0,0.0,True,404.0319,0.0001,0.0,49.0,False,0.0,True
-P07_L400,"Sekant ogive (şişkin, ρ=0.75ρt)",sharp,sharp,True,1.0,0.0,True,402.5993,0.0,0.0,50.041,True,0.0,True
+P07_L400,"Sekant ogive (orta, ρ=1.25ρt)",sharp,sharp,True,1.0,0.0,True,403.66,0.0001,0.0,49.0,False,0.0,True
 P08_L400,Küresel körleştirilmiş tanjant ogive,blunt,blunt,True,0.5,4.9,False,416.7601,0.0,0.0,49.0,False,0.0,True
 P09_L400,Eliptik,blunt,blunt,True,0.5,6.002,False,400.0,0.0,0.0,49.0,False,0.0,True
 P10_L400,Parabolik (K = 1),sharp,sharp,True,1.0,0.0,True,403.2546,0.0,0.0,49.0,False,0.0,True
@@ -65,7 +65,7 @@ P03_L500,Bi-konik,sharp,sharp,True,1.0,0.0,True,506.4501,0.0,0.0,49.0,False,0.0,
 P04_L500,Kesik (meplatlı) konik,flat,flat,True,0.0,,False,500.0,0.0,0.0,49.0,False,0.0,True
 P05_L500,Tanjant ogive,sharp,sharp,True,1.0,0.0,True,504.2197,0.0,0.0,49.0,False,0.0,True
 P06_L500,"Sekant ogive (ince, ρ=1.5ρt)",sharp,sharp,True,1.0,0.0,True,505.2656,0.0,0.0,49.0,False,0.0,True
-P07_L500,"Sekant ogive (şişkin, ρ=0.75ρt)",sharp,sharp,True,1.0,0.0,True,503.4739,0.0,0.0,50.034,True,0.0,True
+P07_L500,"Sekant ogive (orta, ρ=1.25ρt)",sharp,sharp,True,1.0,0.0,True,504.8006,0.0001,0.0,49.0,False,0.0,True
 P08_L500,Küresel körleştirilmiş tanjant ogive,blunt,blunt,True,0.5,4.9,False,522.1112,0.0,0.0,49.0,False,0.0,True
 P09_L500,Eliptik,blunt,blunt,True,0.5,4.802,False,500.0,0.0,0.0,49.0,False,0.0,True
 P10_L500,Parabolik (K = 1),sharp,sharp,True,1.0,0.0,True,504.2674,0.0,0.0,49.0,False,0.0,True
