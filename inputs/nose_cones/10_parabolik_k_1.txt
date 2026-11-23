@@ -1,0 +1,5 @@
+# id: 10
+# name: Parabolik (K = 1)
+# params: L, R
+# syntax: MATLAB (x: eksenel koordinat [m], uç x=0; y: yarıçap [m])
+y = R*(2*(x/L) - 1.00*(x/L).^2)/(2 - 1.00);

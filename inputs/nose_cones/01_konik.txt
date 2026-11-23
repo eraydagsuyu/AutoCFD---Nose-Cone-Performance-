@@ -1,0 +1,5 @@
+# id: 01
+# name: Konik
+# params: L, R
+# syntax: MATLAB (x: eksenel koordinat [m], uç x=0; y: yarıçap [m])
+y = R*x/L;

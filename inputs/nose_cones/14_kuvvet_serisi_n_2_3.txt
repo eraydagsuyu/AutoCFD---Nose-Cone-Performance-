@@ -1,0 +1,5 @@
+# id: 14
+# name: Kuvvet serisi (n = 2/3)
+# params: L, R
+# syntax: MATLAB (x: eksenel koordinat [m], uç x=0; y: yarıçap [m])
+y = R*(x/L).^(2/3);

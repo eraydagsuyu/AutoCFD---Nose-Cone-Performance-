@@ -1,0 +1,5 @@
+# id: 18
+# name: Tanjant Haack (C = 2/3)
+# params: R, th
+# syntax: MATLAB (x: eksenel koordinat [m], uç x=0; y: yarıçap [m])
+y = R/sqrt(pi)*sqrt(th - sin(2*th)/2 + (2/3)*sin(th).^3);

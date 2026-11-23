@@ -1,0 +1,5 @@
+# id: 05
+# name: Tanjant ogive
+# params: L, R, rho
+# syntax: MATLAB (x: eksenel koordinat [m], uç x=0; y: yarıçap [m])
+y = sqrt(rho^2 - (L - x).^2) + R - rho;

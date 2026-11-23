@@ -1,0 +1,5 @@
+# id: 02
+# name: Küresel körleştirilmiş konik
+# params: L, R, rn, x0c, xtc
+# syntax: MATLAB (x: eksenel koordinat [m], uç x=0; y: yarıçap [m])
+y = (x < xtc).*sqrt(max(rn^2 - (x - x0c).^2, 0)) + (x >= xtc).*R.*x/L;

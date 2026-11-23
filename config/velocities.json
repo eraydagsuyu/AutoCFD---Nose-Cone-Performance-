@@ -1,0 +1,146 @@
+{
+  "source": "inputs/raw/Vt_graph.txt",
+  "note": "Artan hız sırası (warm-start için). Basınç/sıcaklık ISA'dan altitude_m ile hesaplanır.",
+  "points": [
+    {
+      "index": 1,
+      "velocity_ms": 20.9,
+      "mach": 0.062,
+      "time_s": 0.12,
+      "altitude_m": 971.0
+    },
+    {
+      "index": 2,
+      "velocity_ms": 41.8,
+      "mach": 0.124,
+      "time_s": 0.22,
+      "altitude_m": 975.0
+    },
+    {
+      "index": 3,
+      "velocity_ms": 62.7,
+      "mach": 0.186,
+      "time_s": 0.35,
+      "altitude_m": 981.0
+    },
+    {
+      "index": 4,
+      "velocity_ms": 83.6,
+      "mach": 0.248,
+      "time_s": 0.49,
+      "altitude_m": 991.0
+    },
+    {
+      "index": 5,
+      "velocity_ms": 104.5,
+      "mach": 0.311,
+      "time_s": 0.62,
+      "altitude_m": 1004.0
+    },
+    {
+      "index": 6,
+      "velocity_ms": 125.4,
+      "mach": 0.373,
+      "time_s": 0.76,
+      "altitude_m": 1020.0
+    },
+    {
+      "index": 7,
+      "velocity_ms": 146.3,
+      "mach": 0.435,
+      "time_s": 0.9,
+      "altitude_m": 1039.0
+    },
+    {
+      "index": 8,
+      "velocity_ms": 167.2,
+      "mach": 0.497,
+      "time_s": 1.05,
+      "altitude_m": 1061.0
+    },
+    {
+      "index": 9,
+      "velocity_ms": 188.1,
+      "mach": 0.56,
+      "time_s": 1.19,
+      "altitude_m": 1087.0
+    },
+    {
+      "index": 10,
+      "velocity_ms": 209.0,
+      "mach": 0.622,
+      "time_s": 1.35,
+      "altitude_m": 1117.0
+    },
+    {
+      "index": 11,
+      "velocity_ms": 229.9,
+      "mach": 0.685,
+      "time_s": 1.5,
+      "altitude_m": 1152.0
+    },
+    {
+      "index": 12,
+      "velocity_ms": 250.8,
+      "mach": 0.747,
+      "time_s": 1.67,
+      "altitude_m": 1191.0
+    },
+    {
+      "index": 13,
+      "velocity_ms": 271.7,
+      "mach": 0.81,
+      "time_s": 1.84,
+      "altitude_m": 1236.0
+    },
+    {
+      "index": 14,
+      "velocity_ms": 292.6,
+      "mach": 0.873,
+      "time_s": 2.02,
+      "altitude_m": 1286.0
+    },
+    {
+      "index": 15,
+      "velocity_ms": 313.5,
+      "mach": 0.936,
+      "time_s": 2.21,
+      "altitude_m": 1343.0
+    },
+    {
+      "index": 16,
+      "velocity_ms": 334.4,
+      "mach": 0.999,
+      "time_s": 2.41,
+      "altitude_m": 1408.0
+    },
+    {
+      "index": 17,
+      "velocity_ms": 355.3,
+      "mach": 1.062,
+      "time_s": 2.61,
+      "altitude_m": 1480.0
+    },
+    {
+      "index": 18,
+      "velocity_ms": 376.2,
+      "mach": 1.126,
+      "time_s": 2.84,
+      "altitude_m": 1561.0
+    },
+    {
+      "index": 19,
+      "velocity_ms": 397.1,
+      "mach": 1.19,
+      "time_s": 3.1,
+      "altitude_m": 1663.0
+    },
+    {
+      "index": 20,
+      "velocity_ms": 418.0,
+      "mach": 1.257,
+      "time_s": 3.8,
+      "altitude_m": 1952.0
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+# id: 09
+# name: Eliptik
+# params: L, R
+# syntax: MATLAB (x: eksenel koordinat [m], uç x=0; y: yarıçap [m])
+y = R*sqrt(x.*(2*L - x))/L;

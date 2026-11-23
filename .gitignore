@@ -1,0 +1,30 @@
+# Makineye özel ayar
+machine_config.json
+
+# Ağır / üretilen veriler
+meshes/
+data/
+logs/
+*.msh
+*.cas.h5
+*.dat.h5
+*.trn
+*.out
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Fluent geçici dosyaları
+cleanup-fluent-*.bat
+fluent*.log
+
+# Sistem
+Thumbs.db
+desktop.ini
+
+# Kökteki ham dosya kopyaları (asılları inputs/raw/ altında)
+/Nosecone_eq.txt
+/Vt_graph.txt

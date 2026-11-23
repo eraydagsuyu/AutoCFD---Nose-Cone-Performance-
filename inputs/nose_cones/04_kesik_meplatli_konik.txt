@@ -1,0 +1,5 @@
+# id: 04
+# name: Kesik (meplatlı) konik
+# params: L, R, Rt
+# syntax: MATLAB (x: eksenel koordinat [m], uç x=0; y: yarıçap [m])
+y = Rt + (R - Rt)*x/L;

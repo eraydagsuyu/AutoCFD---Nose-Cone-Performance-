@@ -1,0 +1,5 @@
+# id: 03
+# name: Bi-konik
+# params: L, L1, R, R1
+# syntax: MATLAB (x: eksenel koordinat [m], uç x=0; y: yarıçap [m])
+y = (x < L1).*R1.*x/L1 + (x >= L1).*(R1 + (R - R1)*(x - L1)/(L - L1));

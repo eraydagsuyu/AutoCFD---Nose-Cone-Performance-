@@ -1,0 +1,5 @@
+# id: 19
+# name: Hiperbolik
+# params: L, R, a
+# syntax: MATLAB (x: eksenel koordinat [m], uç x=0; y: yarıçap [m])
+y = R*sqrt(x.^2 + 2*a*x)/sqrt(L^2 + 2*a*L);

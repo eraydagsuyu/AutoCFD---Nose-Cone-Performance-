@@ -1,0 +1,5 @@
+# id: 08
+# name: Küresel körleştirilmiş tanjant ogive
+# params: L, R, rho, rn, x0o, xto
+# syntax: MATLAB (x: eksenel koordinat [m], uç x=0; y: yarıçap [m])
+y = (x < xto).*sqrt(max(rn^2 - (x - x0o).^2, 0)) + (x >= xto).*(sqrt(rho^2 - (L - x).^2) + R - rho);

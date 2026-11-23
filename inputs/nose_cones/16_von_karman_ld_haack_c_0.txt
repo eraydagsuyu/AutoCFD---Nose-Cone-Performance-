@@ -1,0 +1,5 @@
+# id: 16
+# name: Von Kármán (LD-Haack, C = 0)
+# params: R, th
+# syntax: MATLAB (x: eksenel koordinat [m], uç x=0; y: yarıçap [m])
+y = R/sqrt(pi)*sqrt(th - sin(2*th)/2 + 0*sin(th).^3);

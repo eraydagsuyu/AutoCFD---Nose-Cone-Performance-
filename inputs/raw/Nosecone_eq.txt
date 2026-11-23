@@ -1,0 +1,21 @@
+DENKLEMLER ---
+01 Konik                              ==>> y = R*x/L;
+02 Küresel körleştirilmiş konik       ==>> y = (x < xtc).*sqrt(max(rn^2 - (x - x0c).^2, 0)) + (x >= xtc).*R.*x/L;
+03 Bi-konik                           ==>> y = (x < L1).*R1.*x/L1 + (x >= L1).*(R1 + (R - R1)*(x - L1)/(L - L1));
+04 Kesik (meplatlı) konik             ==>> y = Rt + (R - Rt)*x/L;
+05 Tanjant ogive                      ==>> y = sqrt(rho^2 - (L - x).^2) + R - rho;
+06 Sekant ogive (ince, ρ=1.5ρt)       ==>> y = sqrt((1.5*rho)^2 - (1.5*rho*cos(acos(sqrt(L^2+R^2)/(3*rho)) - atan(R/L)) - x).^2) - 1.5*rho*sin(acos(sqrt(L^2+R^2)/(3*rho)) - atan(R/L));
+07 Sekant ogive (şişkin, ρ=0.75ρt)    ==>> y = sqrt((0.75*rho)^2 - (0.75*rho*cos(acos(sqrt(L^2+R^2)/(1.5*rho)) - atan(R/L)) - x).^2) - 0.75*rho*sin(acos(sqrt(L^2+R^2)/(1.5*rho)) - atan(R/L));
+08 Küresel körleştirilmiş tanjant ogive ==>> y = (x < xto).*sqrt(max(rn^2 - (x - x0o).^2, 0)) + (x >= xto).*(sqrt(rho^2 - (L - x).^2) + R - rho);
+09 Eliptik                            ==>> y = R*sqrt(x.*(2*L - x))/L;
+10 Parabolik (K = 1)                  ==>> y = R*(2*(x/L) - 1.00*(x/L).^2)/(2 - 1.00);
+11 Parabolik (K = 3/4)                ==>> y = R*(2*(x/L) - 0.75*(x/L).^2)/(2 - 0.75);
+12 Parabolik (K = 1/2)                ==>> y = R*(2*(x/L) - 0.50*(x/L).^2)/(2 - 0.50);
+13 Kuvvet serisi (n = 1/2)            ==>> y = R*(x/L).^(1/2);
+14 Kuvvet serisi (n = 2/3)            ==>> y = R*(x/L).^(2/3);
+15 Kuvvet serisi (n = 3/4)            ==>> y = R*(x/L).^(3/4);
+16 Von Kármán (LD-Haack, C = 0)       ==>> y = R/sqrt(pi)*sqrt(th - sin(2*th)/2 + 0*sin(th).^3);
+17 LV-Haack (C = 1/3)                 ==>> y = R/sqrt(pi)*sqrt(th - sin(2*th)/2 + (1/3)*sin(th).^3);
+18 Tanjant Haack (C = 2/3)            ==>> y = R/sqrt(pi)*sqrt(th - sin(2*th)/2 + (2/3)*sin(th).^3);
+19 Hiperbolik                         ==>> y = R*sqrt(x.^2 + 2*a*x)/sqrt(L^2 + 2*a*L);
+20 Sears-Haack (ön yarı)              ==>> y = R*(1 - (1 - x/L).^2).^(3/4);

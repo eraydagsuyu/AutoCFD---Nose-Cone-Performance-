@@ -1,0 +1,5 @@
+# id: 11
+# name: Parabolik (K = 3/4)
+# params: L, R
+# syntax: MATLAB (x: eksenel koordinat [m], uç x=0; y: yarıçap [m])
+y = R*(2*(x/L) - 0.75*(x/L).^2)/(2 - 0.75);

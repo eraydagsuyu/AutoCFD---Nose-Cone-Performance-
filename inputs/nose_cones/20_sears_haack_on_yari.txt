@@ -1,0 +1,5 @@
+# id: 20
+# name: Sears-Haack (ön yarı)
+# params: L, R
+# syntax: MATLAB (x: eksenel koordinat [m], uç x=0; y: yarıçap [m])
+y = R*(1 - (1 - x/L).^2).^(3/4);

@@ -1,0 +1,5 @@
+# id: 06
+# name: Sekant ogive (ince, ρ=1.5ρt)
+# params: L, R, rho
+# syntax: MATLAB (x: eksenel koordinat [m], uç x=0; y: yarıçap [m])
+y = sqrt((1.5*rho)^2 - (1.5*rho*cos(acos(sqrt(L^2+R^2)/(3*rho)) - atan(R/L)) - x).^2) - 1.5*rho*sin(acos(sqrt(L^2+R^2)/(3*rho)) - atan(R/L));

@@ -1,0 +1,5 @@
+# id: 07
+# name: Sekant ogive (şişkin, ρ=0.75ρt)
+# params: L, R, rho
+# syntax: MATLAB (x: eksenel koordinat [m], uç x=0; y: yarıçap [m])
+y = sqrt((0.75*rho)^2 - (0.75*rho*cos(acos(sqrt(L^2+R^2)/(1.5*rho)) - atan(R/L)) - x).^2) - 0.75*rho*sin(acos(sqrt(L^2+R^2)/(1.5*rho)) - atan(R/L));
