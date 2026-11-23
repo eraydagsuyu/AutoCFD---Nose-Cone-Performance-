@@ -62,10 +62,10 @@ Kurallar:
 - Model: **Axisymmetric**, ideal gaz hava + enerji denklemi, k-ω SST. Mach 0,06–1,26 aralığı nedeniyle sıkıştırılabilir çözüm zorunludur (density-based veya pressure-based coupled).
 - Dış sınır şartı: `pressure-far-field` (Mach + statik p, T). Statik p, T her hız noktası için o noktanın irtifasında **ISA** atmosferinden hesaplanır.
 - **Reference Values** her hız adımında güncellenir: velocity, density, temperature, pressure; **area = π·R²**, length = L. Unutulursa tüm Cd'ler hatalıdır.
-- Mesh başına tek Fluent oturumu; hızlar artan sırada; yalnızca ilk hızda `hybrid-init`, sonrakilerde warm-start. Mesh değişince oturum kapatılır.
-- Cd, drag report `.out` dosyasından son N iterasyon ortalamasıyla okunur. Yakınsama: residual + Cd bağıl değişimi. Zaman aşımı veya ıraksama → `diverged`, sıradaki adıma geçilir.
-- Transonik bölge (Mach ≈ 0,9–1,1) zor yakınsar: daha yüksek iterasyon limiti / CFL rampası tanımlanır.
-- `.dat.h5` yalnızca her mesh'in en düşük ve en yüksek hızı için saklanır.
+- Mesh başına tek Fluent oturumu; hızlar artan sırada; ilk hızda başlatma (profilde tanımlı: hybrid/FMG), sonrakilerde warm-start. Mesh değişince oturum kapatılır.
+- Cd, drag report `.out` dosyasından son N iterasyon ortalamasıyla okunur. Yakınsama: residual + Cd penceresi (bağıl std). Ayrıntı: Bölüm 10.
+- Transonik bölge (Mach ≈ 0,9–1,1) zor yakınsar: ayrı rejim profili (düşük CFL, uzun rampa, yüksek iterasyon limiti).
+- `.dat.h5` yalnızca her mesh'in en düşük ve en yüksek hızı için saklanır; "son iyi durum" checkpoint'i koşu bitince silinir.
 
 ## 5. Mesh Kuralları (hibrit: yapısal BL + Gmsh üçgen → Fluent .msh)
 - Sınır isimleri sabit sözleşmedir: **`inlet`, `outlet`, `farfield`, `wall_rocket`, `axis`** (hücre bölgesi: `fluid`). Değiştirilemez.
@@ -92,8 +92,8 @@ Kurallar:
 - Windows + PowerShell uyumlu komutlar. Kodda sabit mutlak yol yok: makineye özel her şey `machine_config.json`'dan okunur (fluent.exe yolu, çekirdek sayısı, Python yolu). Git'te yalnızca `machine_config.example.json` tutulur.
 - **İstanbul (yerel, geliştirme):** yalnızca `--mode single` (1 mesh × 1 hız). Toplu döngü yerelde **başlatılmaz**.
 - **Ankara (uzak, üretim):** Tailscale + OpenSSH ile erişim; `git pull` → `--mode batch`. Toplu koşu SSH'tan bağımsız arka plan süreci olarak (`Start-Process`) başlatılır, tüm çıktı `logs/` altına.
-- Durum takibi: `data/results.db` (SQLite). Yeniden başlatmada yalnızca `pending` (ve yarım kalmış `running`) satırlar çözülür. Durumlar: `pending, running, done, diverged, mesh_error`.
-- Her istisna yakalanır ve SQLite'a (`error_msg`) + log dosyasına yazılır; tek bir koşu hatası tüm batch'i durdurmaz.
+- Durum takibi: `data/results.db` (SQLite) — şema ve durum makinesi Bölüm 10'da. Yeniden başlatmada yalnızca bekleyen (ve yarım kalmış `running`) koşular çözülür; tamamlananlar tekrarlanmaz.
+- Her istisna yakalanır ve SQLite'a (`attempts.error_msg`) + `logs/events.jsonl` + log dosyasına yazılır; tek bir koşu hatası tüm batch'i durdurmaz.
 
 ## 7. Klasör Yapısı
 ```
@@ -103,7 +103,8 @@ C:\RocketCFD\
 ├── machine_config.example.json
 ├── machine_config.json           # Git'e girmez
 ├── requirements.txt
-├── config\  velocities.json, flight_profile.csv, nose_params.json
+├── config\  velocities.json, flight_profile.csv, nose_params.json, mesh_settings.json,
+│            recovery_policy.json, solver_profiles\ (base + subsonic/transonic/supersonic)
 ├── inputs\raw\                   # Ham girdiler: Nosecone_eq.txt, Vt_graph.txt (elle düzenlenmez)
 ├── inputs\nose_cones\            # 20 profil denklemi (.txt) — src/tools/prepare_inputs.py üretir
 ├── .venv\                        # Python 3.11 sanal ortamı (Git'e girmez) — scripts\setup_env.ps1 kurar
@@ -117,25 +118,60 @@ C:\RocketCFD\
 │   ├── tools\check_env.py        # paket + headless Fluent başlat/kapat testi
 │   ├── 00_preopt.py              # rn (02/08), L1/R1, Rt, a ön optimizasyonu
 │   ├── 01_mesh_gen.py
-│   ├── 02_fluent_solver.py
-│   ├── 03_orchestrator.py        # --mode single | batch
-│   └── 04_postprocess.py
-├── scripts\                      # start_batch.ps1, status.ps1
-├── docs\                         # preopt_report.md, sonuç raporları
+│   ├── 02_fluent_solver.py       # tek koşu: profil+override -> izleme -> sınıflandırma -> Cd
+│   ├── 03_orchestrator.py        # --mode single | batch; kuyruk + otomatik kurtarma
+│   ├── 04_postprocess.py
+│   └── rcfd.py                   # denetçi CLI: status, failures, inspect, retry, skip, pause, resume
+├── scripts\                      # setup_env.ps1, start_batch.ps1
+├── docs\                         # runbook_supervisor.md, preopt_report.md, sonuç raporları
 ├── meshes\                      # <ID>.msh.gz — Git'te tutulur
 ├── data\  logs\                # Git'e girmez
 ```
 
 ## 8. Geliştirme Sırası (küçük, test edilebilir adımlar)
-1. İskelet + config dosyaları (Vt_graph → velocities.json / flight_profile.csv, denklemlerin bölünmesi).
-2. Geometri: 80 profilin üretimi + grafiksel sağlama (y ≤ R, uzunluk = L, uç yuvarlatma teğetliği).
-3. Tekil mesh doğrulaması (1 geometri).
-4. Tekil Fluent doğrulaması (1 mesh × 1 hız) → Cd → SQLite.
-5. Ön optimizasyon (03, 04, 19 için serbest parametreler) — Ankara'da.
-6. Orkestratör + batch (1.600 koşu) — Ankara'da.
-7. Son işleme: Cd(v) → Cd(t) (lineer/PCHIP), K_kayıp, yardımcı ∫v²·Cd dt, sıralama ve grafikler.
+1. ✅ İskelet + config dosyaları.
+2. ✅ Geometri: 80 profil (y ≤ R, uzunluk = L, uç yuvarlatma teğetliği).
+3. ✅ Mesh: 80/80 Fluent kontrolünden geçti, Git'te.
+4. Çözücü: profil şeması + `02_fluent_solver.py` (izleme, sınıflandırma, checkpoint). İstanbul'da tekli test: 1 mesh × 1 hız + ayrıca Mach ≈ 1 tekli test.
+5. Orkestratör: SQLite şeması, kuyruk, kurtarma basamakları, kontrol tablosu.
+6. `rcfd.py` + `docs/runbook_supervisor.md`; İstanbul'da kasıtlı diverge testi (tekli koşu) ile kurtarma zinciri doğrulanır.
+7. Ön optimizasyon (02/08 rn, 03 L1/R1, 04 Rt, 19 a) → 20 mesh yeniden üretilir ve commit'lenir — Ankara'da.
+8. Ankara: kurulum, denetçi Claude Code, batch (1.600 koşu).
+9. Son işleme: Cd(v) → Cd(t) (lineer/PCHIP), K_kayıp, yardımcı ∫v²·Cd dt, sıralama ve grafikler.
 
 Her adımın sonunda doğrulama yapılmadan sonrakine geçilmez.
+
+## 10. Denetimli Çözüm Mimarisi (kullanıcı onaylı, 2026-11-23)
+**İlke:** Batch denetçi olmadan da uçtan uca çalışır. Rutin kurtarmayı Python yapar; denetçi (Ankara'daki Claude Code)
+yalnızca otomatik basamakların çözemediği koşulara müdahale eder ve bunu **kod değil veri** değiştirerek yapar.
+
+Katmanlar:
+- **Çözücü** (`02_fluent_solver.py`): tek koşu. Ayarlar `config/solver_profiles/` (base + rejim) + koşuya özel override'dan birleşir.
+  Her N iterasyonda Cd ve residual okunur; başarısızlık sınıflandırılır; "son iyi durum" checkpoint'i tutulur.
+  Residual/Cd geçmişi `logs/runs/<run_id>/<attempt>/history.csv` dosyasına yazılır.
+- **Orkestratör** (`03_orchestrator.py`): SQLite kuyruğu, `config/recovery_policy.json` basamakları, `control` tablosunu koşular arasında okur
+  (pause / stop-after-current / öncelik). Fluent yazarken asla kesilmez.
+- **Denetçi** (Claude Code, Ankara): `/loop` ile düzenli `rcfd status` + `logs/events.jsonl`; yalnızca `src/rcfd.py` ile müdahale eder.
+
+Başarısızlık sınıfları: `diverged` (NaN / FPE / residual patlaması), `oscillating` (Cd sınırlı salınım), `stalled` (residual düşmüyor, Cd sürükleniyor),
+`crash`, `timeout`; salınım genliği < %1 ise ortalama Cd kabul edilir → `done_flagged`.
+
+Durum makinesi (`runs.status`): `pending → running → done | done_flagged | retry_pending → running … → needs_review | skipped | mesh_error`.
+
+SQLite tabloları: `runs` (geom_id, vel_idx, mach, altitude, status, cd, mesh_version), `attempts` (run_id, attempt_no, profile_hash,
+overrides_json, outcome, iterations, cd, cd_rel_std, log_dir, decided_by = auto|agent|human, reason), `events`, `control`.
+
+**Geçerlilik kuralı:** `done` sayılan her Cd ikinci derece ayrıklaştırma ve tam yakınsama ölçütüyle elde edilmiş olmalı — kurtarma yolu sonucu etkilemez.
+
+**Fizik kilidi:** Override yalnızca izin listesindeki sayısal anahtarlarda yapılabilir (CFL ve rampası, ayrıklaştırma geçiş iterasyonu,
+under-relaxation, başlatma yöntemi, iterasyon limiti, yakınsama penceresi, çözücü tipi). Türbülans modeli, domain, mesh, BC tipi,
+Reference Values, gaz modeli override edilemez (80 geometrinin Cd'leri karşılaştırılabilir kalmalı).
+
+### Ankara denetçisi yetkileri (kullanıcı onaylı)
+- **Kendi başına yapabilir:** koşuya özel sayısal override ile `rcfd retry`; `rcfd skip` (gerekçeyle); pause/resume;
+  aynı düzeltme çok koşuda işe yarıyorsa rejim profilini değiştirip gerekçeli commit + push ve etkilenen koşuları yeniden kuyruğa alma.
+- **Kullanıcıya sormadan yapamaz:** fizik/mesh/domain değişikliği, mesh yeniden üretimi, `R`/`L`/sınır isimleri, `done` sonuçların silinmesi.
+- Her müdahalede `--reason` zorunludur; `attempts.decided_by = agent` olarak kaydedilir. Teşhis rehberi: `docs/runbook_supervisor.md`.
 
 ## 9. Yapma Listesi
 - Fluent'i GUI ile açma; yerelde batch başlatma.
