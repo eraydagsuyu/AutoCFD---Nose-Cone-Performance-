@@ -1,0 +1,11 @@
+{
+  "note": "M ≥ 1,15 — ayrık şok (bow shock) önde; orta CFL.",
+  "mach_min": 1.15,
+  "mach_max": 10.0,
+  "first_order_iters": 400,
+  "courant_start": 0.5,
+  "courant_end": 8.0,
+  "courant_ramp_iters": 600,
+  "min_iters": 1200,
+  "max_iters": 6000
+}

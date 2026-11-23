@@ -1,0 +1,6 @@
+{
+  "note": "M < 0,7 — düşük Mach'ta density-based çözücü ön koşullandırma (preconditioning) ile çalışır.",
+  "mach_min": 0.0,
+  "mach_max": 0.7,
+  "courant_end": 20.0
+}

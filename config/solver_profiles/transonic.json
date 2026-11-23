@@ -1,0 +1,12 @@
+{
+  "note": "0,7 ≤ M < 1,15 — şok oluşumu ve konum hareketi; düşük CFL, uzun rampa, uzun pencere.",
+  "mach_min": 0.7,
+  "mach_max": 1.15,
+  "first_order_iters": 500,
+  "courant_start": 0.5,
+  "courant_end": 5.0,
+  "courant_ramp_iters": 800,
+  "min_iters": 1500,
+  "max_iters": 8000,
+  "conv_window": 500
+}

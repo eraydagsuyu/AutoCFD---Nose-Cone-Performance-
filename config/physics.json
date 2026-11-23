@@ -1,0 +1,26 @@
+{
+  "note": "FİZİK KİLİDİ: Bu dosya override edilemez. Değişiklik yalnızca kullanıcı onayıyla yapılır ve tüm koşuların yeniden çözülmesini gerektirir.",
+  "two_dim_space": "axisymmetric",
+  "energy": true,
+  "viscous_model": "k-omega",
+  "k_omega_model": "sst",
+  "air": {
+    "density": "ideal-gas",
+    "viscosity": "sutherland",
+    "sutherland": {"mu0": 1.716e-5, "T0": 273.11, "S": 110.56},
+    "cp": 1006.43,
+    "thermal_conductivity": 0.0242,
+    "R_specific": 287.05,
+    "gamma": 1.4
+  },
+  "operating_pressure": 0.0,
+  "freestream_turbulence": {"intensity": 0.001, "viscosity_ratio": 10.0},
+  "atmosphere": "ISA troposfer: T = 288.15 − 0.0065·h, p = 101325·(T/288.15)^5.25588",
+  "reference": {
+    "area": "pi*R^2",
+    "length": "L + body_length",
+    "note": "Fluent eksenel simetride kuvvetleri tam 2π gövde için raporlar; bu yüzden A_ref = π·R²."
+  },
+  "drag_zone": "wall_rocket",
+  "drag_direction": [1.0, 0.0, 0.0]
+}
