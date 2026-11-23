@@ -167,6 +167,15 @@ overrides_json, outcome, iterations, cd, cd_rel_std, log_dir, decided_by = auto|
 under-relaxation, başlatma yöntemi, iterasyon limiti, yakınsama penceresi, çözücü tipi). Türbülans modeli, domain, mesh, BC tipi,
 Reference Values, gaz modeli override edilemez (80 geometrinin Cd'leri karşılaştırılabilir kalmalı).
 
+### Doğrulanmış tekli koşular (İstanbul, 10 çekirdek, i5-12450H)
+| Koşu | Rejim | Sonuç | Cd | İterasyon | Süre | Not |
+|---|---|---|---|---|---|---|
+| P16_L300 v05 (M 0,31) | subsonic | done | 0,3638 | 1750 | 7,3 dk | residual 5–8 mertebe düştü; el hesabıyla tutarlı (sürtünme ~0,23 + taban ~0,13) |
+| P16_L300 v16 (M 0,999) | transonic | done_flagged | 0,4689 | 8000 (max) | 27 dk | Cd ±%0,43 salınım, süreklilik residual'ı ~4e-3'te plato — taban izi/şok kararsızlığı |
+
+- Fluent v241 settings API notları: flux adları `Roe-FDS` / `AUSM` (büyük harf); far-field TVR anahtarı `turbulent_viscosity_ratio_real`;
+  DBNS ayrıklaştırma anahtarları `amg-c`, `k`, `omega`; FMG yalnızca hybrid init sonrası aktif.
+
 ### Ankara denetçisi yetkileri (kullanıcı onaylı)
 - **Kendi başına yapabilir:** koşuya özel sayısal override ile `rcfd retry`; `rcfd skip` (gerekçeyle); pause/resume;
   aynı düzeltme çok koşuda işe yarıyorsa rejim profilini değiştirip gerekçeli commit + push ve etkilenen koşuları yeniden kuyruğa alma.
