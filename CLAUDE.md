@@ -212,7 +212,18 @@ Reference Values, gaz modeli override edilemez (80 geometrinin Cd'leri karşıla
 | Ön optimizasyon: aday başına (v5, v10, v15 soğuk; v19 warm) | ~19,5 dk | 92 × 19,5 dk ≈ 30 işçi-saati |
 | **Toplam (2 işçi)** | | **≈ 72 saat ≈ 3 gün** |
 Transonik warm zinciri (v12→v18) orkestratörde henüz uçtan uca ölçülmedi (v17 warm testi: ~500 it); Ankara'nın ilk geometrisinde doğrulanır.
-Önerilen başlangıç: `start_batch.ps1 -Campaign preopt -Workers 1` + `start_batch.ps1 -Campaign main -Workers 1`.
+Önerilen başlangıç: önce `src\00_preopt.py --build` (92 aday mesh Git'te hazır; yalnızca 368 koşuyu yeni makinenin DB'sine kaydeder —
+**atlanırsa preopt kampanyası "kuyruk boş" deyip çıkar**), sonra `start_batch.ps1 -Campaign preopt -Workers 1` + `start_batch.ps1 -Campaign main -Workers 1`.
+
+### Belgeler (PDF)
+- `docs/pdf/Talimatlar.pdf` (Ankara sıfırdan kurulum, arkadaş için), `Sistem_Raporu.pdf`, `Sonuc_Hassasiyet_Raporu.pdf`.
+- Üretim: `src\tools\report_figures.py` (veri + şekiller → `docs/report_assets/`), ardından `build_talimatlar.py`,
+  `build_sistem_raporu.py`, `build_hassasiyet_raporu.py`. Stil: `src/tools/pdf_style.py` (Arial TTF; Unicode üst simgeler
+  otomatik `<super>`'e çevrilir; kod kutusu satırı ≤ 100 karakter, aşılırsa hata verir).
+- Hassasiyet raporunun ana iddiası: sıralama güvenilir (K farkı > %3), mutlak Cd gerçek uçuş Cd'si değil (kanatçık/egzoz yok).
+  **Mesh bağımsızlığı (GCI) yapılmadı** — ağ hatası tahmindir; ana koşu sonrası önerilir.
+- Aday mesh hatası (düzeltildi): küresel körleştirme başlangıcındaki ~1e-10 m yuvarlama kalıntısı "meplat" sanılıyordu →
+  meplat eşiği `1e-5·L` (`geometry.classify_tip`). 92/92 aday mesh Fluent kontrolünden geçti (min OQ 0,23).
 
 ### Çalıştırma ve araçlar
 - Tekli (İstanbul): `src\03_orchestrator.py --mode single --geom P16_L300 --vel 5` (DB'ye yazar, kurtarma basamaklarıyla).

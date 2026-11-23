@@ -127,8 +127,14 @@ $p1.WaitForExit()
 
 ### B4. Toplu koşuyu başlatma
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\start_batch.ps1
+# 1) Ön optimizasyon koşularını bu makinenin veritabanına kaydet (92 aday mesh Git'te hazır; saniyeler sürer).
+#    Atlanırsa preopt kampanyası "kuyruk boş" deyip çıkar.
+.venv\Scripts\python.exe src\00_preopt.py --build
+# 2) İşçileri başlat (lisans 2 oturuma izin veriyorsa ikisi birden; vermiyorsa önce preopt)
+powershell -ExecutionPolicy Bypass -File scripts\start_batch.ps1 -Campaign preopt -Workers 1
+powershell -ExecutionPolicy Bypass -File scripts\start_batch.ps1 -Campaign main -Workers 1
 .venv\Scripts\python.exe src\rcfd.py status
+.venv\Scripts\python.exe src\rcfd.py --campaign preopt status
 ```
 SSH'ı kapatın, 2 dk sonra yeniden bağlanıp `rcfd status` → tüm işçilerin kalp atışı güncel olmalı (SSH kopmasına dayanıklılık testi).
 

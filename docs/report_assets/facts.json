@@ -1,0 +1,271 @@
+{
+  "validation_runs": [
+    {
+      "vel_idx": 1,
+      "mach": 0.062101677745508246,
+      "status": "done",
+      "cd": 0.43226106605315145
+    },
+    {
+      "vel_idx": 2,
+      "mach": 0.12420908485497789,
+      "status": "done_flagged",
+      "cd": 0.3990185344697001
+    },
+    {
+      "vel_idx": 3,
+      "mach": 0.1863265205816121,
+      "status": "done",
+      "cd": 0.38257702613922734
+    },
+    {
+      "vel_idx": 5,
+      "mach": 0.3106266161724715,
+      "status": "done",
+      "cd": 0.36332277327523327
+    },
+    {
+      "vel_idx": 6,
+      "mach": 0.37282078464367474,
+      "status": "done",
+      "cd": 0.3571298209899156
+    },
+    {
+      "vel_idx": 15,
+      "mach": 0.9355470183850094,
+      "status": "done_flagged",
+      "cd": 0.35920758733465213
+    }
+  ],
+  "validation_attempts": [
+    {
+      "vel_idx": 1,
+      "attempt_no": 1,
+      "outcome": "done",
+      "init_method": "hybrid",
+      "iterations": 1000,
+      "elapsed_s": 191.3,
+      "cd": 0.43226106605315145
+    },
+    {
+      "vel_idx": 2,
+      "attempt_no": 1,
+      "outcome": "diverged",
+      "init_method": "file:latest.dat.h5",
+      "iterations": 151,
+      "elapsed_s": 26.3,
+      "cd": NaN
+    },
+    {
+      "vel_idx": 2,
+      "attempt_no": 2,
+      "outcome": "diverged",
+      "init_method": "file:latest.dat.h5",
+      "iterations": 301,
+      "elapsed_s": 49.5,
+      "cd": NaN
+    },
+    {
+      "vel_idx": 2,
+      "attempt_no": 3,
+      "outcome": "diverged",
+      "init_method": "file:latest.dat.h5",
+      "iterations": 551,
+      "elapsed_s": 90.2,
+      "cd": NaN
+    },
+    {
+      "vel_idx": 2,
+      "attempt_no": 4,
+      "outcome": "stalled",
+      "init_method": "hybrid",
+      "iterations": 3000,
+      "elapsed_s": 537.1,
+      "cd": NaN
+    },
+    {
+      "vel_idx": 2,
+      "attempt_no": 5,
+      "outcome": "crash",
+      "init_method": "previous",
+      "iterations": 0,
+      "elapsed_s": 0.0,
+      "cd": NaN
+    },
+    {
+      "vel_idx": 2,
+      "attempt_no": 6,
+      "outcome": "crash",
+      "init_method": "file:latest.dat.h5",
+      "iterations": 0,
+      "elapsed_s": 0.0,
+      "cd": NaN
+    },
+    {
+      "vel_idx": 2,
+      "attempt_no": 7,
+      "outcome": "crash",
+      "init_method": "hybrid",
+      "iterations": 0,
+      "elapsed_s": 0.0,
+      "cd": NaN
+    },
+    {
+      "vel_idx": 2,
+      "attempt_no": 5,
+      "outcome": "diverged",
+      "init_method": "file:latest.dat.h5",
+      "iterations": 251,
+      "elapsed_s": 42.9,
+      "cd": NaN
+    },
+    {
+      "vel_idx": 2,
+      "attempt_no": 6,
+      "outcome": "diverged",
+      "init_method": "file:latest.dat.h5",
+      "iterations": 351,
+      "elapsed_s": 68.1,
+      "cd": NaN
+    },
+    {
+      "vel_idx": 2,
+      "attempt_no": 7,
+      "outcome": "diverged",
+      "init_method": "file:latest.dat.h5",
+      "iterations": 401,
+      "elapsed_s": 64.4,
+      "cd": NaN
+    },
+    {
+      "vel_idx": 2,
+      "attempt_no": 8,
+      "outcome": "diverged",
+      "init_method": "file:latest.dat.h5",
+      "iterations": 901,
+      "elapsed_s": 148.9,
+      "cd": NaN
+    },
+    {
+      "vel_idx": 2,
+      "attempt_no": 9,
+      "outcome": "stalled",
+      "init_method": "hybrid",
+      "iterations": 3000,
+      "elapsed_s": 500.5,
+      "cd": NaN
+    },
+    {
+      "vel_idx": 2,
+      "attempt_no": 10,
+      "outcome": "done_flagged",
+      "init_method": "previous",
+      "iterations": 1800,
+      "elapsed_s": 293.5,
+      "cd": 0.3990185344697001
+    },
+    {
+      "vel_idx": 3,
+      "attempt_no": 1,
+      "outcome": "done",
+      "init_method": "hybrid",
+      "iterations": 950,
+      "elapsed_s": 174.2,
+      "cd": 0.38257702613922734
+    },
+    {
+      "vel_idx": 5,
+      "attempt_no": 1,
+      "outcome": "done",
+      "init_method": "hybrid",
+      "iterations": 900,
+      "elapsed_s": 164.8,
+      "cd": 0.36332277327523327
+    },
+    {
+      "vel_idx": 6,
+      "attempt_no": 1,
+      "outcome": "done",
+      "init_method": "file:latest.dat.h5",
+      "iterations": 1001,
+      "elapsed_s": 177.7,
+      "cd": 0.3571298209899156
+    },
+    {
+      "vel_idx": 15,
+      "attempt_no": 1,
+      "outcome": "done_flagged",
+      "init_method": "hybrid",
+      "iterations": 1950,
+      "elapsed_s": 380.7,
+      "cd": 0.35920758733465213
+    }
+  ],
+  "semiempirical": [
+    {
+      "vel_idx": 1,
+      "mach": 0.062101677745508246,
+      "Re_L": 3046757.1674093604,
+      "cd_cfd": 0.43226106605315145,
+      "cd_friction_be": 0.3282908420329124,
+      "cd_base_be": 0.1205013603892449,
+      "cd_semi": 0.44879220242215734,
+      "diff_pct": -3.683472279550845
+    },
+    {
+      "vel_idx": 2,
+      "mach": 0.12420908485497789,
+      "Re_L": 6091561.604819344,
+      "cd_cfd": 0.3990185344697001,
+      "cd_friction_be": 0.2920329775846,
+      "cd_base_be": 0.12200562657886643,
+      "cd_semi": 0.41403860416346644,
+      "diff_pct": -3.627697886798082
+    },
+    {
+      "vel_idx": 3,
+      "mach": 0.1863265205816121,
+      "Re_L": 9132950.047712684,
+      "cd_cfd": 0.38257702613922734,
+      "cd_friction_be": 0.2733729191170273,
+      "cd_base_be": 0.12451328439536649,
+      "cd_semi": 0.3978862035123938,
+      "diff_pct": -3.8476270948885976
+    },
+    {
+      "vel_idx": 5,
+      "mach": 0.3106266161724715,
+      "Re_L": 15193544.877100728,
+      "cd_cfd": 0.36332277327523327,
+      "cd_friction_be": 0.2521887744321,
+      "cd_base_be": 0.13254355630771877,
+      "cd_semi": 0.38473233073981883,
+      "diff_pct": -5.56479291028549
+    },
+    {
+      "vel_idx": 6,
+      "mach": 0.37282078464367474,
+      "Re_L": 18208874.43091658,
+      "cd_cfd": 0.3571298209899156,
+      "cd_friction_be": 0.24520285813048223,
+      "cd_base_be": 0.13806939387010228,
+      "cd_semi": 0.3832722520005845,
+      "diff_pct": -6.820851463734209
+    }
+  ],
+  "mesh": {
+    "n": 80,
+    "cells_min": 92103,
+    "cells_max": 128508,
+    "skew_max": 0.81951649421109,
+    "oq_min": 0.139653,
+    "oq_median": 0.139653,
+    "n_layers": 37,
+    "bl_ratio": 1.1976766240962633
+  },
+  "mesh_preopt": {
+    "n": 92,
+    "ok": 92,
+    "oq_min": 0.227663
+  }
+}

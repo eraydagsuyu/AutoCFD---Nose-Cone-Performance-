@@ -153,7 +153,9 @@ class TipInfo:
 
 def classify_tip(f, x_tip: float, Ls: float, rn_mesh: float) -> TipInfo:
     y0 = float(f(np.array([x_tip]))[0])
-    if y0 > 1e-9 * Ls:
+    # Eşik fiziksel: en küçük gerçek meplat 2,45 mm; küresel körleştirmenin başlangıcındaki yuvarlama
+    # kalıntısı (~1e-10 m) meplat sanılmamalı (P08_L200_c04 hatası).
+    if y0 > 1e-5 * Ls:
         return TipInfo("flat", 0.0, math.nan, False)
     d1, d2 = 1e-8 * Ls, 1e-6 * Ls
     y1, y2 = f(np.array([x_tip + d1, x_tip + d2]))
