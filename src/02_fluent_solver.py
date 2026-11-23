@@ -41,11 +41,14 @@ def parse_sets(items: list[str]) -> dict:
     return out
 
 
-def run_single(gid: str, vel_idx: int, overrides: dict, cores: int | None = None) -> dict:
+def run_single(gid: str, vel_idx: int, overrides: dict, cores: int | None = None,
+               init_file: Path | None = None) -> dict:
     cfg = load_machine_config()
     phys = load_physics()
     pt = next(p for p in load_velocities() if p["index"] == vel_idx)
     fs = freestream(pt["velocity_ms"], pt["altitude_m"], phys)
+    if init_file is not None:
+        overrides = {**overrides, "init_method": "file"}
     prof, regime = resolve_profile(fs.mach, overrides)
     meta = geo_meta(gid)
     msh = MESH_DIR / f"{gid}.msh.gz"
@@ -62,9 +65,9 @@ def run_single(gid: str, vel_idx: int, overrides: dict, cores: int | None = None
         (workdir / "meta.json").write_text(json.dumps({
             "geom_id": gid, "vel_idx": vel_idx, "freestream": fs.as_dict(), "profile": prof,
             "profile_hash": profile_hash(prof), "overrides": overrides, "reference_values": ref,
-            "mesh": str(msh), "machine": cfg.get("machine_name"),
+            "mesh": str(msh), "machine": cfg.get("machine_name"), "init_file": str(init_file) if init_file else None,
         }, indent=2, default=str), encoding="utf-8")
-        res = run_attempt(solver, prof, workdir, fresh_init=True)
+        res = run_attempt(solver, prof, workdir, fresh_init=True, init_file=init_file)
         solver.tui.file.stop_transcript()
     log.info("%s v%02d: %s  Cd=%s  it=%d  %.0fs  %s", gid, vel_idx, res.outcome,
              f"{res.cd:.5f}" if res.cd is not None else "-", res.iterations, res.elapsed_s, res.message)
@@ -79,13 +82,14 @@ def main() -> int:
     ap.add_argument("--vel", type=int, required=True, help="Hız noktası indeksi 1..20")
     ap.add_argument("--set", action="append", default=[], help="Sayısal override: anahtar=değer")
     ap.add_argument("--cores", type=int, default=None)
+    ap.add_argument("--init-file", type=Path, default=None, help="Başlangıç alanı .dat.h5 (warm-start testi)")
     args = ap.parse_args()
     LOG_DIR.mkdir(exist_ok=True)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s",
                         handlers=[logging.FileHandler(LOG_DIR / "solver.log", encoding="utf-8"),
                                   logging.StreamHandler(sys.stdout)])
     logging.getLogger("ansys").setLevel(logging.WARNING)
-    out = run_single(args.geom.upper(), args.vel, parse_sets(args.set), args.cores)
+    out = run_single(args.geom.upper(), args.vel, parse_sets(args.set), args.cores, args.init_file)
     print(json.dumps(out, indent=2, ensure_ascii=False))
     return 0 if out["outcome"] in ("done", "done_flagged") else 1
 

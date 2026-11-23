@@ -217,10 +217,11 @@ class NoseGeometry:
     n_arc_pts: int         # x/y dizisinin başındaki yay noktası sayısı (0 = yay yok)
     kink_idx: list[int] = field(default_factory=list)   # eğim süreksizliği olan nokta indeksleri (ör. 03'te L1)
     checks: dict = field(default_factory=dict)
+    id_override: str | None = None      # ön optimizasyon adayları için (ör. P03_L300_c04)
 
     @property
     def geom_id(self) -> str:
-        return f"P{self.pid}_L{round(self.L * 1000):03d}"
+        return self.id_override or f"P{self.pid}_L{round(self.L * 1000):03d}"
 
 
 def _cluster(a: float, b: float, n: int) -> np.ndarray:

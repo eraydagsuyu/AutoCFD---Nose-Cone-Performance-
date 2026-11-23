@@ -173,8 +173,27 @@ Reference Values, gaz modeli override edilemez (80 geometrinin Cd'leri karşıla
 | P16_L300 v05 (M 0,31) | subsonic | done | 0,3638 | 1750 | 7,3 dk | residual 5–8 mertebe düştü; el hesabıyla tutarlı (sürtünme ~0,23 + taban ~0,13) |
 | P16_L300 v16 (M 0,999) | transonic | done_flagged | 0,4689 | 8000 (max) | 27 dk | Cd ±%0,43 salınım, süreklilik residual'ı ~4e-3'te plato — taban izi/şok kararsızlığı |
 
+| P16_L300 v17 (M 1,062) | transonic, warm-start (v16'dan) | done_flagged | 0,4913 | 4451 | 12,8 dk | ortalama yakınsaması; soğuk v16'nın yarı süresi |
+
 - Fluent v241 settings API notları: flux adları `Roe-FDS` / `AUSM` (büyük harf); far-field TVR anahtarı `turbulent_viscosity_ratio_real`;
-  DBNS ayrıklaştırma anahtarları `amg-c`, `k`, `omega`; FMG yalnızca hybrid init sonrası aktif.
+  DBNS ayrıklaştırma anahtarları `amg-c`, `k`, `omega`; FMG yalnızca hybrid init sonrası aktif; FAS multigrid implicit DBNS'de pasif;
+  CASM: `methods.convergence_acceleration_for_stretched_meshes.convergence_acceleration_type` ∈ {disable-casm, casm, enhanced-casm}.
+- **Fluent iterasyon sayacı** veri dosyasından / önceki hızdan devam eder → deneme içi iterasyon daima bu denemenin `cd.out` satır sayısıdır
+  (mutlak numara kullanma; kullanılırsa warm-start 50 it sonra yanlış "done" verir — yaşandı, düzeltildi).
+- Fluent'e verilen dosya yolları **mutlak** olmalı (Fluent kendi cwd'sinden okur).
+- **Ortalama yakınsaması** (`mean_window`, `mean_rel_change`, `mean_max_amp`): kalıcı salınımlı transonik akışlar için. Soğuk başlatmada
+  yavaş iz gelişimi platolarında erken durabilir (2,6 % hata gözlendi) → eşikler sıkı (500 it / %0,1) ve asıl hızlandırma warm-start.
+- Warm-start profil anahtarları `warm_*`: yakınsamış alandan başlarken 1. derece aşaması atlanır, kısa CFL rampası.
+
+### Çalıştırma ve araçlar
+- Tekli (İstanbul): `src\03_orchestrator.py --mode single --geom P16_L300 --vel 5` (DB'ye yazar, kurtarma basamaklarıyla).
+  Ham tekli test (DB'siz): `src\02_fluent_solver.py --geom ... --vel ... [--set k=v] [--init-file x.dat.h5]`.
+- Batch (Ankara): `scripts\start_batch.ps1` — süreç **WMI `Win32_Process.Create`** ile başlatılır; `Start-Process` kullanma
+  (Windows OpenSSH, oturumdan başlatılan süreçleri Job Object'le birlikte sonlandırabilir).
+- Orkestratör: geometri başına tek oturum, hızlar artan sırada; başlatma `previous` (oturumdaki yakınsamış alan) → `neighbor`
+  (`data/fields/<geom>/latest.dat.h5`) → `hybrid`. Kilit: `data/orchestrator.lock`; kalp atışı `control.heartbeat`.
+- Denetçi: `src\rcfd.py` (status, failures, inspect, events, profile, export, retry, requeue, skip, priority, pause, resume, stop).
+  Rehber: `docs/runbook_supervisor.md`. Ankara kurulumu: `docs/ankara_setup.md`.
 
 ### Ankara denetçisi yetkileri (kullanıcı onaylı)
 - **Kendi başına yapabilir:** koşuya özel sayısal override ile `rcfd retry`; `rcfd skip` (gerekçeyle); pause/resume;

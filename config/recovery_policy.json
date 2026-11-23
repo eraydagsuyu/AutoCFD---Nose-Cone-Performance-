@@ -1,0 +1,24 @@
+{
+  "note": "Otomatik kurtarma basamakları. Başarısız denemenin sınıfına göre sıradaki basamak uygulanır; basamaklar bitince koşu needs_review olur. 'scale' son denemenin çözülmüş profiline göre çarpandır, 'set' mutlak değerdir. 'init': previous (oturumdaki mevcut alan) | last_good | neighbor (aynı geometrinin en son yakınsamış alanı) | hybrid | fmg.",
+  "diverged": [
+    {"init": "last_good", "scale": {"courant_start": 0.5, "courant_end": 0.5}, "set": {"warm_first_order_iters": 200}},
+    {"init": "neighbor", "scale": {"courant_start": 0.5, "courant_end": 0.5, "warm_courant_ramp_iters": 2.0}, "set": {"warm_first_order_iters": 300}},
+    {"init": "hybrid", "scale": {"courant_start": 0.5, "courant_end": 0.4, "courant_ramp_iters": 2.0}, "set": {"first_order_iters": 800}},
+    {"init": "fmg", "scale": {"courant_end": 0.5}, "set": {"flux_type": "AUSM", "first_order_iters": 1000}}
+  ],
+  "stalled": [
+    {"init": "previous", "scale": {"max_iters": 0.6}, "set": {"warm_min_iters": 200, "warm_courant_ramp_iters": 0}},
+    {"init": "previous", "scale": {"courant_end": 0.5, "max_iters": 0.6}, "set": {"warm_min_iters": 200, "warm_courant_ramp_iters": 100}}
+  ],
+  "oscillating": [
+    {"init": "previous", "scale": {"courant_end": 0.5, "max_iters": 0.5}, "set": {"warm_min_iters": 200, "warm_courant_ramp_iters": 100}},
+    {"init": "previous", "scale": {"courant_end": 0.5, "max_iters": 0.5, "mean_window": 1.5}, "set": {"warm_min_iters": 200}}
+  ],
+  "timeout": [
+    {"init": "previous", "scale": {"timeout_s": 1.5}, "set": {"warm_min_iters": 200, "warm_courant_ramp_iters": 0}}
+  ],
+  "crash": [
+    {"init": "neighbor", "set": {}, "restart_session": true},
+    {"init": "hybrid", "set": {}, "restart_session": true}
+  ]
+}

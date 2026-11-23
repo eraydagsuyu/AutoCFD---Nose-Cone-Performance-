@@ -122,6 +122,9 @@ def apply_numerics(solver, prof: dict, second_order: bool) -> None:
         ds = m.discretization_scheme
         for k in ds():
             ds[k] = order
+        casm = prof.get("casm", "disable-casm")
+        if m.convergence_acceleration_for_stretched_meshes.convergence_acceleration_type() != casm:
+            m.convergence_acceleration_for_stretched_meshes.convergence_acceleration_type = casm
     else:
         m.p_v_coupling.flow_scheme = "Coupled"
         ds = m.discretization_scheme
@@ -141,10 +144,14 @@ def set_courant(solver, prof: dict, it: int) -> float:
     return c
 
 
-def initialize(solver, method: str, last_good: Path | None = None) -> None:
+def initialize(solver, method: str, last_good: Path | None = None, init_file: Path | None = None) -> None:
+    """hybrid | fmg | previous (oturumdaki alan) | last_good (checkpoint) | file (verilen .dat.h5)."""
     init = solver.settings.solution.initialization
-    if method == "last_good" and last_good and last_good.exists():
-        solver.settings.file.read_data(file_name=str(last_good))
+    src = init_file if method == "file" else last_good if method == "last_good" else None
+    if src is not None:
+        if not Path(src).exists():
+            raise FileNotFoundError(f"Başlatma dosyası yok: {src}")
+        solver.settings.file.read_data(file_name=str(Path(src).resolve()))
         return
     if method == "previous":
         return                                 # warm-start: mevcut alan korunur
@@ -210,7 +217,7 @@ class AttemptResult:
 
 
 def run_attempt(solver, prof: dict, workdir: Path, fresh_init: bool = True,
-                init_method: str | None = None) -> AttemptResult:
+                init_method: str | None = None, init_file: Path | None = None) -> AttemptResult:
     """Profilde tanımlı izlenen çözüm. workdir: cd.out, history.csv, last_good.dat.h5, result.json."""
     workdir.mkdir(parents=True, exist_ok=True)
     out = workdir / "cd.out"
@@ -220,8 +227,18 @@ def run_attempt(solver, prof: dict, workdir: Path, fresh_init: bool = True,
     t0 = time.time()
 
     method = init_method or (prof["init_method"] if fresh_init else "previous")
+    if method in ("previous", "file", "last_good"):
+        # Warm-start: yakınsamış alandan başlanır — birinci derece aşaması ve uzun rampa gereksiz
+        prof = {**prof,
+                "first_order_iters": prof["warm_first_order_iters"],
+                "courant_start": prof["warm_courant_start"],
+                "courant_ramp_iters": prof["warm_courant_ramp_iters"],
+                "min_iters": prof["warm_min_iters"]}
+        log.info("  warm-start (%s): 1. derece=%d it, CFL %.2g->%.2g / %d it, min_iters=%d", method,
+                 prof["first_order_iters"], prof["courant_start"], prof["courant_end"],
+                 prof["courant_ramp_iters"], prof["min_iters"])
     apply_numerics(solver, prof, second_order=prof["first_order_iters"] <= 0)
-    initialize(solver, method, last_good)
+    initialize(solver, method, last_good, init_file)
 
     it = 0
     switched = prof["first_order_iters"] <= 0
@@ -229,6 +246,7 @@ def run_attempt(solver, prof: dict, workdir: Path, fresh_init: bool = True,
     res0: dict[str, float] = {}
     hist_rows = []
     outcome, msg = None, ""
+    cd_final = None
 
     while it < prof["max_iters"]:
         if time.time() - t0 > prof["timeout_s"]:
@@ -249,9 +267,11 @@ def run_attempt(solver, prof: dict, workdir: Path, fresh_init: bool = True,
             break
 
         its, cd = read_out_file(out)
-        done_it = int(its[-1]) if len(its) else it
+        # Fluent mutlak iterasyon sayacını veri dosyasından/önceki hızdan sürdürür; bu yüzden
+        # deneme içi iterasyon = bu denemenin .out dosyasındaki satır sayısı.
+        done_it = len(cd)
         if done_it < it + n:   # Fluent iterasyonu erken kesti (ör. divergence detected)
-            outcome, msg = "diverged", f"Fluent iterasyonu {done_it}'te kesti (beklenen {it + n})"
+            outcome, msg = "diverged", f"Fluent iterasyonu {done_it}. adımda kesti (beklenen {it + n})"
             it = done_it
             break
         it = done_it
@@ -284,6 +304,17 @@ def run_attempt(solver, prof: dict, workdir: Path, fresh_init: bool = True,
             if ws["rel_std"] < prof["conv_cd_rel_std"] and ws["rel_drift"] < prof["conv_cd_rel_drift"]:
                 outcome = "done"
                 break
+        # Ortalama yakınsaması (kalıcı salınımlı akışlar): art arda iki pencerenin ortalaması oturduysa
+        mw = prof["mean_window"]
+        if switched and it - switch_it >= 2 * mw and it >= prof["min_iters"]:
+            a, b = cd[-2 * mw:-mw], cd[-mw:]
+            m2 = float(np.mean(cd[-2 * mw:]))
+            dm = abs(float(np.mean(b) - np.mean(a))) / abs(m2)
+            amp = float(cd[-2 * mw:].max() - cd[-2 * mw:].min()) / 2 / abs(m2)
+            if dm < prof["mean_rel_change"] and amp < prof["mean_max_amp"]:
+                outcome, cd_final = "done_flagged", m2
+                msg = f"ortalama yakınsaması: pencere ortalamaları farkı %{dm * 100:.3f}, salınım ±%{amp * 100:.2f} ({2 * mw} it ortalaması)"
+                break
 
     _write_history(workdir / "history.csv", hist_rows)
     its, cd = read_out_file(out)
@@ -306,7 +337,8 @@ def run_attempt(solver, prof: dict, workdir: Path, fresh_init: bool = True,
             resid_drop[k] = round(math.log10(v[0] / v[-1]), 2)
 
     res = AttemptResult(
-        outcome=outcome, cd=ws["mean"] if (ok and ws) else None, iterations=int(it),
+        outcome=outcome, cd=(cd_final if cd_final is not None else ws["mean"]) if (ok and ws) else None,
+        iterations=int(it),
         elapsed_s=round(time.time() - t0, 1),
         cd_rel_std=ws["rel_std"] if ws else None, cd_rel_drift=ws["rel_drift"] if ws else None,
         cd_rel_amp=ws["rel_amp"] if ws else None, residual_drop_orders=resid_drop, message=msg,
