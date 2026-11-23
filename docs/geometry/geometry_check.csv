@@ -1,0 +1,81 @@
+geom_id,name,tip_kind,expected,kind_match,exponent_p,tip_Rc_mm,blunted_1mm,L_sharp_mm,length_err_um,shoulder_err_um,y_max_mm,exceeds_R,arc_tan_err_deg,ok
+P01_L200,Konik,sharp,sharp,True,1.0,0.0,True,203.2671,0.0,0.0,49.0,False,0.0,True
+P02_L200,Küresel körleştirilmiş konik,blunt,blunt,True,0.5,4.9,False,217.3838,0.0,0.0,49.0,False,0.0,True
+P03_L200,Bi-konik,sharp,sharp,True,1.0,0.0,True,202.1113,0.0001,0.0,49.0,False,0.0,True
+P04_L200,Kesik (meplatlı) konik,flat,flat,True,0.0,,False,200.0,0.0,0.0,49.0,False,0.0,True
+P05_L200,Tanjant ogive,sharp,sharp,True,1.0,0.0,True,201.184,0.0,0.0,49.0,False,0.0,True
+P06_L200,"Sekant ogive (ince, ρ=1.5ρt)",sharp,sharp,True,1.0,0.0,True,201.6004,0.0,0.0,49.0,False,0.0,True
+P07_L200,"Sekant ogive (şişkin, ρ=0.75ρt)",sharp,sharp,True,1.0,0.0,True,200.8878,0.0,0.0,50.105,True,0.0,True
+P08_L200,Küresel körleştirilmiş tanjant ogive,blunt,blunt,True,0.5,4.9,False,206.2364,0.0001,0.0,49.0,False,0.0,True
+P09_L200,Eliptik,blunt,blunt,True,0.5,12.005,False,200.0,0.0,0.0,49.0,False,0.0,True
+P10_L200,Parabolik (K = 1),sharp,sharp,True,1.0,0.0,True,201.2931,0.0,0.0,49.0,False,0.0,True
+P11_L200,Parabolik (K = 3/4),sharp,sharp,True,1.0,0.0,True,201.7719,0.0,0.0,49.0,False,0.0,True
+P12_L200,Parabolik (K = 1/2),sharp,sharp,True,1.0,0.0,True,202.2642,0.0,0.0,49.0,False,0.0,True
+P13_L200,Kuvvet serisi (n = 1/2),blunt,blunt,True,0.5,6.002,False,200.0,0.0,0.0,49.0,False,0.0,True
+P14_L200,Kuvvet serisi (n = 2/3),zero_radius,zero_radius,True,0.667,0.0,True,200.0731,0.0001,0.0,49.0,False,0.0,True
+P15_L200,Kuvvet serisi (n = 3/4),zero_radius,zero_radius,True,0.75,0.0,True,200.4304,0.0,0.0,49.0,False,0.0,True
+P16_L200,"Von Kármán (LD-Haack, C = 0)",zero_radius,zero_radius,True,0.75,0.0,True,200.2026,0.0,0.0,49.0,False,0.0,True
+P17_L200,LV-Haack (C = 1/3),zero_radius,zero_radius,True,0.75,0.0,True,200.105,0.0,0.0,49.0,False,0.0,True
+P18_L200,Tanjant Haack (C = 2/3),zero_radius,zero_radius,True,0.75,0.0,True,200.0634,0.0,0.0,49.0,False,0.0,True
+P19_L200,Hiperbolik,blunt,blunt,True,0.5,2.001,False,200.0,0.0,0.0,49.0,False,0.0,True
+P20_L200,Sears-Haack (ön yarı),zero_radius,zero_radius,True,0.75,0.0,True,200.0877,0.0,0.0,49.0,False,0.0,True
+P01_L300,Konik,sharp,sharp,True,1.0,0.0,True,305.3106,0.0,0.0,49.0,False,0.0,True
+P02_L300,Küresel körleştirilmiş konik,blunt,blunt,True,0.5,4.9,False,328.293,0.0,0.0,49.0,False,0.0,True
+P03_L300,Bi-konik,sharp,sharp,True,1.0,0.0,True,303.5363,0.0,0.0,49.0,False,0.0,True
+P04_L300,Kesik (meplatlı) konik,flat,flat,True,0.0,,False,300.0,0.0,0.0,49.0,False,0.0,True
+P05_L300,Tanjant ogive,sharp,sharp,True,1.0,0.0,True,302.1796,0.0,0.0,49.0,False,0.0,True
+P06_L300,"Sekant ogive (ince, ρ=1.5ρt)",sharp,sharp,True,1.0,0.0,True,302.8062,0.0001,0.0,49.0,False,0.0,True
+P07_L300,"Sekant ogive (şişkin, ρ=0.75ρt)",sharp,sharp,True,1.0,0.0,True,301.733,0.0,0.0,50.058,True,0.0,True
+P08_L300,Küresel körleştirilmiş tanjant ogive,blunt,blunt,True,0.5,4.9,False,311.4484,0.0,0.0,49.0,False,0.0,True
+P09_L300,Eliptik,blunt,blunt,True,0.5,8.003,False,300.0,0.0,0.0,49.0,False,0.0,True
+P10_L300,Parabolik (K = 1),sharp,sharp,True,1.0,0.0,True,302.2567,0.0,0.0,49.0,False,0.0,True
+P11_L300,Parabolik (K = 3/4),sharp,sharp,True,1.0,0.0,True,303.0097,0.0001,0.0,49.0,False,0.0,True
+P12_L300,Parabolik (K = 1/2),sharp,sharp,True,1.0,0.0,True,303.773,0.0,0.0,49.0,False,0.0,True
+P13_L300,Kuvvet serisi (n = 1/2),blunt,blunt,True,0.5,4.002,False,300.0,0.0,0.0,49.0,False,0.0,True
+P14_L300,Kuvvet serisi (n = 2/3),zero_radius,zero_radius,True,0.667,0.0,True,300.23,0.0,0.0,49.0,False,0.0,True
+P15_L300,Kuvvet serisi (n = 3/4),zero_radius,zero_radius,True,0.75,0.0,True,300.8945,0.0,0.0,49.0,False,0.0,True
+P16_L300,"Von Kármán (LD-Haack, C = 0)",zero_radius,zero_radius,True,0.75,0.0,True,300.4769,0.0,0.0,49.0,False,0.0,True
+P17_L300,LV-Haack (C = 1/3),zero_radius,zero_radius,True,0.75,0.0,True,300.2743,0.0,0.0,49.0,False,0.0,True
+P18_L300,Tanjant Haack (C = 2/3),zero_radius,zero_radius,True,0.75,0.0,True,300.1776,0.0,0.0,49.0,False,0.0,True
+P19_L300,Hiperbolik,blunt,blunt,True,0.5,1.334,False,300.0,0.0,0.0,49.0,False,0.0,True
+P20_L300,Sears-Haack (ön yarı),zero_radius,zero_radius,True,0.75,0.0,True,300.235,0.0,0.0,49.0,False,0.0,True
+P01_L400,Konik,sharp,sharp,True,1.0,0.0,True,407.3737,0.0,0.0,49.0,False,0.0,True
+P02_L400,Küresel körleştirilmiş konik,blunt,blunt,True,0.5,4.9,False,439.3027,0.0,0.0,49.0,False,0.0,True
+P03_L400,Bi-konik,sharp,sharp,True,1.0,0.0,True,404.9877,0.0,0.0,49.0,False,0.0,True
+P04_L400,Kesik (meplatlı) konik,flat,flat,True,0.0,,False,400.0,0.0,0.0,49.0,False,0.0,True
+P05_L400,Tanjant ogive,sharp,sharp,True,1.0,0.0,True,403.1956,0.0,0.0,49.0,False,0.0,True
+P06_L400,"Sekant ogive (ince, ρ=1.5ρt)",sharp,sharp,True,1.0,0.0,True,404.0319,0.0001,0.0,49.0,False,0.0,True
+P07_L400,"Sekant ogive (şişkin, ρ=0.75ρt)",sharp,sharp,True,1.0,0.0,True,402.5993,0.0,0.0,50.041,True,0.0,True
+P08_L400,Küresel körleştirilmiş tanjant ogive,blunt,blunt,True,0.5,4.9,False,416.7601,0.0,0.0,49.0,False,0.0,True
+P09_L400,Eliptik,blunt,blunt,True,0.5,6.002,False,400.0,0.0,0.0,49.0,False,0.0,True
+P10_L400,Parabolik (K = 1),sharp,sharp,True,1.0,0.0,True,403.2546,0.0,0.0,49.0,False,0.0,True
+P11_L400,Parabolik (K = 3/4),sharp,sharp,True,1.0,0.0,True,404.2767,0.0,0.0,49.0,False,0.0,True
+P12_L400,Parabolik (K = 1/2),sharp,sharp,True,1.0,0.0,True,405.3071,0.0,0.0,49.0,False,0.0,True
+P13_L400,Kuvvet serisi (n = 1/2),blunt,blunt,True,0.5,3.001,False,400.0,0.0,0.0,49.0,False,0.0,True
+P14_L400,Kuvvet serisi (n = 2/3),zero_radius,zero_radius,True,0.667,0.0,True,400.4417,0.0,0.0,49.0,False,0.0,True
+P15_L400,Kuvvet serisi (n = 3/4),zero_radius,zero_radius,True,0.75,0.0,True,401.4031,0.0,0.0,49.0,False,0.0,True
+P16_L400,"Von Kármán (LD-Haack, C = 0)",zero_radius,zero_radius,True,0.75,0.0,True,400.8018,0.0,0.0,49.0,False,0.0,True
+P17_L400,LV-Haack (C = 1/3),zero_radius,zero_radius,True,0.75,0.0,True,400.4931,0.0,0.0,49.0,False,0.0,True
+P18_L400,Tanjant Haack (C = 2/3),zero_radius,zero_radius,True,0.75,0.0,True,400.3363,0.0,0.0,49.0,False,0.0,True
+P19_L400,Hiperbolik,blunt,blunt,True,0.5,1.0,False,400.0,0.0,0.0,49.0,False,0.0,True
+P20_L400,Sears-Haack (ön yarı),zero_radius,zero_radius,True,0.75,0.0,True,400.4304,0.0,0.0,49.0,False,0.0,True
+P01_L500,Konik,sharp,sharp,True,1.0,0.0,True,509.4448,0.0,0.0,49.0,False,0.0,True
+P02_L500,Küresel körleştirilmiş konik,blunt,blunt,True,0.5,4.9,False,550.353,0.0,0.0,49.0,False,0.0,True
+P03_L500,Bi-konik,sharp,sharp,True,1.0,0.0,True,506.4501,0.0,0.0,49.0,False,0.0,True
+P04_L500,Kesik (meplatlı) konik,flat,flat,True,0.0,,False,500.0,0.0,0.0,49.0,False,0.0,True
+P05_L500,Tanjant ogive,sharp,sharp,True,1.0,0.0,True,504.2197,0.0,0.0,49.0,False,0.0,True
+P06_L500,"Sekant ogive (ince, ρ=1.5ρt)",sharp,sharp,True,1.0,0.0,True,505.2656,0.0,0.0,49.0,False,0.0,True
+P07_L500,"Sekant ogive (şişkin, ρ=0.75ρt)",sharp,sharp,True,1.0,0.0,True,503.4739,0.0,0.0,50.034,True,0.0,True
+P08_L500,Küresel körleştirilmiş tanjant ogive,blunt,blunt,True,0.5,4.9,False,522.1112,0.0,0.0,49.0,False,0.0,True
+P09_L500,Eliptik,blunt,blunt,True,0.5,4.802,False,500.0,0.0,0.0,49.0,False,0.0,True
+P10_L500,Parabolik (K = 1),sharp,sharp,True,1.0,0.0,True,504.2674,0.0,0.0,49.0,False,0.0,True
+P11_L500,Parabolik (K = 3/4),sharp,sharp,True,1.0,0.0,True,505.5559,0.0,0.0,49.0,False,0.0,True
+P12_L500,Parabolik (K = 1/2),sharp,sharp,True,1.0,0.0,True,506.8515,0.0,0.0,49.0,False,0.0,True
+P13_L500,Kuvvet serisi (n = 1/2),blunt,blunt,True,0.5,2.401,False,500.0,0.0,0.0,49.0,False,0.0,True
+P14_L500,Kuvvet serisi (n = 2/3),zero_radius,zero_radius,True,0.667,0.0,True,500.6822,0.0,0.0,49.0,False,0.0,True
+P15_L500,Kuvvet serisi (n = 3/4),zero_radius,zero_radius,True,0.75,0.0,True,501.9317,0.0,0.0,49.0,False,0.0,True
+P16_L500,"Von Kármán (LD-Haack, C = 0)",zero_radius,zero_radius,True,0.75,0.0,True,501.1517,0.0001,0.0,49.0,False,0.0,True
+P17_L500,LV-Haack (C = 1/3),zero_radius,zero_radius,True,0.75,0.0,True,500.7396,0.0,0.0,49.0,False,0.0,True
+P18_L500,Tanjant Haack (C = 2/3),zero_radius,zero_radius,True,0.75,0.0,True,500.5231,0.0,0.0,49.0,False,0.0,True
+P19_L500,Hiperbolik,blunt,blunt,True,0.5,0.8,True,500.0247,0.0,0.0,49.0,False,0.0,True
+P20_L500,Sears-Haack (ön yarı),zero_radius,zero_radius,True,0.75,0.0,True,500.6539,0.0,0.0,49.0,False,0.0,True

@@ -38,6 +38,8 @@ Kurallar:
 - `th` (Haack, 16–18) = arccos(1 − 2x/L).
 - `xtc, x0c` (02) ve `xto, x0o` (08): `rn` küresinin koni/ogive'e teğet noktası ve küre merkezi — kodda analitik olarak hesaplanır.
 - Profil ID formatı: `P{NN}_L{LLL}` (ör. `P16_L300`). Bu ID SQLite'taki `nose_cone_id`'dir.
+- Geometri yalnızca `src/common/geometry.py` ile üretilir (`build_geometry` / `build_all`). Serbest parametre: `nose_params.json` → `selected["L200"]` varsa o, yoksa `provisional`.
+- Doğrulanmış durum (2026-11-23): 80/80 geometri geçerli, uç sınıflandırması beklenenle birebir; uzunluk hatası < 0,001 µm.
 
 ### Ön optimizasyonla belirlenecek serbest parametreler (Claude belirler)
 | Profil | Parametre | Aday aralığı (başlangıç) | Kısıt |
@@ -91,7 +93,9 @@ C:\RocketCFD\
 ├── inputs\nose_cones\            # 20 profil denklemi (.txt) — src/tools/prepare_inputs.py üretir
 ├── .venv\                        # Python 3.11 sanal ortamı (Git'e girmez) — scripts\setup_env.ps1 kurar
 ├── src\
-│   ├── common\                   # config.py (yollar + json okuma), fluent_session.py (güvenli oturum)
+│   ├── common\                   # config.py (yollar + json okuma), fluent_session.py (güvenli oturum),
+│   │                             # geometry.py (denklem → profil, uç sınıflandırma, 1 mm yay, L' iterasyonu)
+│   ├── tools\check_geometry.py   # 80 geometri doğrulaması + docs/geometry/ grafikleri
 │   ├── tools\prepare_inputs.py   # raw -> config/ + nose_cones/ dönüşümü (tekrarlanabilir)
 │   ├── tools\check_env.py        # paket + headless Fluent başlat/kapat testi
 │   ├── 00_preopt.py              # rn (02/08), L1/R1, Rt, a ön optimizasyonu

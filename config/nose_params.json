@@ -2,7 +2,12 @@
   "units": "SI (m)",
   "fixed": {
     "R": 0.049,
-    "L_values": [0.200, 0.300, 0.400, 0.500],
+    "L_values": [
+      0.2,
+      0.3,
+      0.4,
+      0.5
+    ],
     "body_length": 2.0,
     "note": "R ve L kullanıcı tarafından sabitlenmiştir; hiçbir optimizasyon bu değerleri değiştiremez. Burnun toplam eksenel uzunluğu tam L olmalıdır."
   },
@@ -10,15 +15,36 @@
     "rn_mesh": 0.001,
     "rule": "Yalnızca uçta singularity varsa uygulanır: (a) uçta sonlu eğimli sivri tepe, veya (b) uçtaki eğrilik yarıçapı < rn_mesh. Uygulandığında toplam uzunluk L korunur (keskin profil uzunluğu L' iteratif ayarlanır).",
     "expected_classification": {
-      "sharp_apex": ["01", "03", "05", "06", "07", "10", "11", "12"],
-      "zero_tip_curvature_radius": ["14", "15", "16", "17", "18", "20"],
+      "sharp_apex": [
+        "01",
+        "03",
+        "05",
+        "06",
+        "07",
+        "10",
+        "11",
+        "12"
+      ],
+      "zero_tip_curvature_radius": [
+        "14",
+        "15",
+        "16",
+        "17",
+        "18",
+        "20"
+      ],
       "smooth_blunt_check_radius": {
         "09": "Rc = R^2/L  (12.0 mm @ L=200 ... 4.8 mm @ L=500) -> uygulanmaz",
         "13": "Rc = R^2/(2L) (6.0 mm @ L=200 ... 2.4 mm @ L=500) -> uygulanmaz",
         "19": "Rc = R^2*a/(L^2+2aL) -> a değerine bağlı, kodda otomatik kontrol"
       },
-      "design_blunted": ["02", "08"],
-      "flat_face": ["04"]
+      "design_blunted": [
+        "02",
+        "08"
+      ],
+      "flat_face": [
+        "04"
+      ]
     },
     "verification": "01_mesh_gen.py bu sınıflandırmayı sayısal olarak (uç eğimi ve eğrilik yarıçapı) yeniden hesaplar; beklenenle uyuşmazsa uyarı loglar."
   },
@@ -30,16 +56,92 @@
   },
   "free_params": {
     "status": "pending_preopt",
-    "note": "Değerler 00_preopt.py ön optimizasyonu ile her L için ayrı belirlenir; aday listeleri L ve R'ye göre boyutsuzdur.",
-    "02": {"rn_over_R": {"candidates": [0.05, 0.10, 0.20, 0.30], "selected": {}}},
-    "03": {
-      "L1_over_L": {"candidates": [0.3, 0.4, 0.5, 0.6, 0.7]},
-      "R1_over_R": {"candidates": [0.5, 0.6, 0.7, 0.8, 0.85]},
-      "constraint": "0<L1<L, 0<R1<R, dışbükeylik: R1/L1 > (R-R1)/(L-L1)",
+    "note": "Değerler 00_preopt.py ön optimizasyonu ile her L için ayrı belirlenir ve selected altına 'L200' gibi anahtarlarla yazılır. selected boşsa provisional (geçici, aday aralığı ortası) kullanılır.",
+    "02": {
+      "rn_over_R": {
+        "candidates": [
+          0.05,
+          0.1,
+          0.2,
+          0.3
+        ]
+      },
+      "provisional": {
+        "rn_over_R": 0.1
+      },
       "selected": {}
     },
-    "04": {"Rt_over_R": {"candidates": [0.05, 0.10, 0.15, 0.20, 0.30]}, "constraint": "Rt < R", "selected": {}},
-    "08": {"rn_over_R": {"candidates": [0.05, 0.10, 0.20, 0.30], "selected": {}}},
-    "19": {"a_over_L": {"candidates": [0.05, 0.10, 0.25, 0.50, 1.00]}, "constraint": "a > 0", "selected": {}}
+    "03": {
+      "L1_over_L": {
+        "candidates": [
+          0.3,
+          0.4,
+          0.5,
+          0.6,
+          0.7
+        ]
+      },
+      "R1_over_R": {
+        "candidates": [
+          0.5,
+          0.6,
+          0.7,
+          0.8,
+          0.85
+        ]
+      },
+      "constraint": "0<L1<L, 0<R1<R, dışbükeylik: R1/L1 > (R-R1)/(L-L1)",
+      "selected": {},
+      "provisional": {
+        "L1_over_L": 0.5,
+        "R1_over_R": 0.7
+      }
+    },
+    "04": {
+      "Rt_over_R": {
+        "candidates": [
+          0.05,
+          0.1,
+          0.15,
+          0.2,
+          0.3
+        ]
+      },
+      "constraint": "Rt < R",
+      "selected": {},
+      "provisional": {
+        "Rt_over_R": 0.15
+      }
+    },
+    "08": {
+      "rn_over_R": {
+        "candidates": [
+          0.05,
+          0.1,
+          0.2,
+          0.3
+        ]
+      },
+      "provisional": {
+        "rn_over_R": 0.1
+      },
+      "selected": {}
+    },
+    "19": {
+      "a_over_L": {
+        "candidates": [
+          0.05,
+          0.1,
+          0.25,
+          0.5,
+          1.0
+        ]
+      },
+      "constraint": "a > 0",
+      "selected": {},
+      "provisional": {
+        "a_over_L": 0.25
+      }
+    }
   }
 }
