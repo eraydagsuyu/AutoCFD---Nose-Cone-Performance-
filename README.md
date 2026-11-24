@@ -9,8 +9,8 @@ Amaç: uçuş boyunca toplam aerodinamik kaybı (**K<sub>kayıp</sub> = ∫ Cd(t
 | Analiz matrisi | 80 geometri × 20 hız = **1.600 koşu** (+ 92 aday × 4 hız = 368 ön optimizasyon koşusu) |
 | Çözücü | Ansys Fluent 2024 R1 (v241), density-based implicit, k-ω SST, ideal gaz, eksenel simetrik |
 | Otomasyon | Python 3.11, PyFluent 0.37.2, Gmsh 4.15.2, SQLite |
-| Durum (24.11.2026) | Geometri 80/80 ✔ · Mesh 80/80 + 92 aday ✔ · Çözücü/orkestratör doğrulandı ✔ · Ankara'da üretim koşusu başlıyor |
-| Tahmini süre | ~3 gün (Ankara, 2 işçi × 4 çekirdek) |
+| Durum (25.11.2026) | Geometri 80/80 ✔ · Mesh 80/80 + 92 aday ✔ · Çözücü/orkestratör doğrulandı ✔ · **Ankara'da üretim koşusu 25.11 00:22'de başladı** (otonom denetçi) |
+| Tahmini süre | ~4–4,5 gün (Ankara, 2 işçi × 4 çekirdek, P/E çekirdeklere CPU sabitlemeli) |
 
 ## 📄 Belgeler (önce bunları okuyun)
 
@@ -77,9 +77,12 @@ powershell -ExecutionPolicy Bypass -File scripts\setup_env.ps1   # Fluent başla
 **Toplu koşu (üretim makinesi, `allow_batch: true`):**
 ```powershell
 .venv\Scripts\python.exe src\00_preopt.py --build    # 368 ön optimizasyon koşusunu kaydeder (mesh'ler hazır, saniyeler)
-powershell -ExecutionPolicy Bypass -File scripts\start_batch.ps1 -Campaign preopt -Workers 1
-powershell -ExecutionPolicy Bypass -File scripts\start_batch.ps1 -Campaign main   -Workers 1
+powershell -ExecutionPolicy Bypass -File scripts\resume_batch.ps1   # kampanya durumuna göre doğru işçileri başlatır
+powershell -ExecutionPolicy Bypass -File scripts\install_tasks.ps1  # (bir kez, makine kullanıcısı) kesinti sonrası devam + ilerleme penceresi
+.venv\Scripts\python.exe src\tools\progress.py                       # tamamlanma yüzdesi
 ```
+Hibrit işlemcide (P+E çekirdek) işçileri `machine_config.json` → `cpu_affinity` ile ayrı çekirdeklere sabitleyin; sabitlemesiz
+eşzamanlı Fluent oturumları ölçümle ~3× yavaş. Her koşunun Cd'si ayrıca `data/results_log.csv`'ye yazılır.
 İşçiler SSH oturumundan bağımsız (WMI ile) başlatılır; bağlantı kopsa da çalışmaya devam ederler.
 
 **İzleme ve müdahale:**

@@ -3,6 +3,10 @@
 Bu belge Ankara'daki Claude Code'un (denetçi) toplu koşuyu nasıl izleyeceğini ve müdahale edeceğini tanımlar.
 Yetki sınırları `CLAUDE.md` Bölüm 10'dadır; bu belge onları **genişletmez**.
 
+> **Otonom dönem (CLAUDE.md Bölüm 0b) geçerliyken:** "kullanıcıya bildir" yazan her yerde → `docs/ankara_notes.md`'ye zaman
+> damgalı satır yaz ve devam et; `git push` yapma (yalnızca yerel commit); 6b'yi kendin uygula. Ölen/çıkan işçiyi Görev Zamanlayıcı
+> (`RocketCFD-Resume-30dk`) 30 dk içinde yeniden başlatır; acil durumda `scripts\resume_batch.ps1` çalıştır.
+
 ## 0. Temel ilke
 - Orkestratör denetçi olmadan da çalışır. Rutin kurtarmayı (`config/recovery_policy.json`) kendisi yapar.
 - Denetçi yalnızca `needs_review` koşulara ve sistem sağlığına bakar. Müdahale **sadece** `src/rcfd.py` ile yapılır.
@@ -15,7 +19,9 @@ $r = ".venv\Scripts\python.exe src\rcfd.py"
 ```
 
 ## 1. Döngü (örn. `/loop 30m` ile)
-1. `rcfd status` — kalp atışı 15 dk'dan eskiyse → Bölüm 5 (orkestratör sağlığı).
+0. `.venv\Scripts\python.exe src\tools\progress.py` — tek ekranda yüzde, işçiler, son Cd'ler, tahmini bitiş.
+1. `rcfd status` (ve `rcfd --campaign preopt status`) — kalp atışı 15 dk'dan eskiyse → Bölüm 5 (orkestratör sağlığı).
+   Eski `single` kalp atışı (24.11 duman testi) gerçek işçi değildir, yok say.
 2. `rcfd events --tail 40 --level WARNING` — yeni uyarı/hata var mı?
 3. `rcfd failures` — `needs_review` listesi. Boşsa dur.
 4. Her biri için `rcfd inspect <run>` → `logs\inspect\<geom>_vNN.png` grafiğini oku → Bölüm 2'deki tabloya göre karar ver.

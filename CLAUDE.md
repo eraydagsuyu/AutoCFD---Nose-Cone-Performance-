@@ -3,22 +3,37 @@
 Bu dosya her oturumda okunur. Buradaki kurallar ve sabitler bağlayıcıdır; değiştirmeden önce kullanıcıya sor.
 İletişim dili: **Türkçe** (teknik terimler ve kod tanımlayıcıları orijinal hâliyle).
 
-## 0. Güncel Durum ve Sonraki Oturum (son güncelleme: 24.11.2026 02:45)
-**Durum:** Geometri (80/80), mesh (80 ana + 92 ön optimizasyon adayı, hepsi Fluent kontrolünden geçti, Git'te), çözücü,
-orkestratör (çoklu işçi), `rcfd`, runbook ve belgeler (`docs/pdf/` 3 PDF, `README.md`) **hazır ve push'landı**.
-Üretim koşusu henüz başlamadı. İstanbul'daki `data/results.db` yalnızca test verisi içerir (P16_L300 v1,2,3,5,6,15); Ankara temiz başlar.
+## 0. Güncel Durum (son güncelleme: 25.11.2026 00:45)
+**Üretim koşusu Ankara'da 25.11.2026 00:22'de başladı ve otonom çalışıyor** (Bölüm 0b). Eray aradan çekildi; tahmini bitiş ~29.11.2026
+(ilk 2 saatten sonra `src\tools\progress.py` kesin tahmini verir). İstanbul'daki `data/results.db` yalnızca test verisidir — kullanma.
 
-**Sonraki oturum: 24.11.2026, 22:45–23:00 — Ankara kurulumu.**
-- Önce: arkadaş `docs/pdf/Talimatlar.pdf` adımlarını uygular (Tailscale, OpenSSH, Git/Python 3.11/Node, clone, setup_env, Claude Code).
-- Eray'ın önceden göndermesi gerekenler: Tailscale daveti, SSH açık anahtarı (`docs/ankara_setup.md` B1). Depo herkese açık görünüyor;
-  gizliye alınırsa Ankara'da `git clone` için token gerekir.
-- Oturumda sıra (`docs/ankara_setup.md` B1–B5): SSH bağlantısı → `machine_config.json` (machine_name ankara, allow_batch true,
-  workers/fluent_cores B3b lisans testine göre: 2×4 veya 1×8) → duman testi (P16_L300 v5, Cd ≈ 0,3633) → iki oturum lisans testi →
-  `src\00_preopt.py --build` → `start_batch.ps1 -Campaign preopt` + `-Campaign main` → SSH kopma testi → Ankara'da Claude Code denetçi (`/loop 30m`).
-- İlk geometride doğrulanacaklar: transonik warm-start zinciri süresi (~4,5 dk varsayımı), 4 çekirdekli işçi süresi, `rcfd status` ETA (~3 gün hedef).
+**Ankara (üretim) — kurulu ve doğrulanmış:**
+- Makine: Yiğit'in bilgisayarı, Tailscale `yigit` 100.86.147.19, kullanıcı `YIGIT\yigit` (yönetici), Intel Core 5 210H (4P HT + 4E,
+  12 mantıksal), 15,6 GB RAM, Ansys v241 varsayılan yolda. Ankara'nın ANSI kod sayfası 1254.
+- İstanbul'dan erişim: `ssh ankara` (`~/.ssh/config`, anahtar `~/.ssh/rocketcfd_ankara`, parolasız). İstanbul Tailscale: `desktop-7n63q13`
+  100.103.192.44, tailnet sahibi Eray'ın Gmail hesabı. Uzak komut: Türkçe/tırnaklı betikleri `powershell -EncodedCommand` ile gönder.
+- `machine_config.json`: machine_name ankara, workers 2, fluent_cores 4, allow_batch true, `cpu_affinity` (Bölüm 0b).
+- Doğrulamalar: duman testi P16_L300 v5 Cd 0,36335 (İstanbul 0,3633) ✔; 2 eşzamanlı Fluent lisansı ✔; 368 preopt koşusu kayıtlı ✔;
+  işçiler WMI ile ayrık (SSH kapanınca yaşıyor) ✔; CPU sabitleme ✔; Görev Zamanlayıcı (`scripts\install_tasks.ps1`, Yiğit kurdu):
+  `RocketCFD-Resume` (oturum açılınca), `RocketCFD-Resume-30dk`, `RocketCFD-Progress` (masaüstünde 5 dk'lık yüzde penceresi) ✔;
+  denetçi Claude Code Yiğit'in terminalinde (`/loop 1h`, izinler `.claude/settings.local.json`, `autoContinueAtUsageLimit`) ✔.
+- 25.11 düzeltmeleri: `.ps1` BOM (PS 5.1 cp1254), Fluent süreç sahipliği (diğer işçiyi öldürme hatası), CPU sabitleme,
+  `results_log.csv`, `--enqueue-only`, `resume_batch.ps1` + `6b_in_progress` koruması, `install_tasks.ps1` (schtasks kısa kullanıcı adı hatası).
 
-**Açık konular:** ön optimizasyon bitince `--select` + 20 mesh yenileme + main yeniden başlatma (kullanıcı onayı, runbook 6b);
-mesh bağımsızlığı (GCI) ve y⁺ çıkarımı (ana koşu sonrası öneri); nihai `04_postprocess.py` raporu.
+**Dönüşte (sonuçları alma) — sırayla:**
+1. `ssh ankara "cd C:\RocketCFD; .venv\Scripts\python.exe src\tools\progress.py"` → tamamlanma; ardından `rcfd status`, `rcfd failures`,
+   `rcfd --campaign preopt status`, `type docs\ankara_notes.md` (denetçi kararları), `git log --oneline origin/main..HEAD` (yerel commit'ler).
+2. Kalan iş varsa bitmesini bekle; bitti ise denetçi döngüsünü Yiğit'e kapattır (işçiler kendiliğinden çıkar).
+3. Ankara'nın yerel commit'lerini al: Ankara'da `git bundle create C:\RocketCFD\ankara.bundle origin/main..HEAD` →
+   İstanbul'da `scp ankara:C:/RocketCFD/ankara.bundle .` → `git pull ankara.bundle HEAD` → `git push`.
+   (Ankara'da `docs/preopt/candidates.json` `--build` ile değişmiş olabilir — commit'lenmemişse önemsiz.)
+4. Veriyi al: `scp ankara:C:/RocketCFD/data/results.db data/results_ankara.db`, `scp ankara:C:/RocketCFD/data/results_log.csv data/`.
+   İstanbul'un test DB'sinin üzerine yazmadan önce yedekle; sonra Ankara DB'sini `data/results.db` yap.
+5. `src\04_postprocess.py` (henüz yazılmadı — Bölüm 8 adım 9), sıralama + grafikler; Hassasiyet raporundaki öneriler (GCI, y⁺).
+6. Bitince Yiğit'e: Görev Zamanlayıcı görevlerini sil (`Unregister-ScheduledTask RocketCFD-*`), Tailscale/SSH erişimini kaldır.
+
+**Açık konular:** `04_postprocess.py` raporu; mesh bağımsızlığı (GCI) ve y⁺ çıkarımı; `rcfd stop` yalnızca bir işçiyi durdurur
+(bayrak ilk okuyan işçide temizleniyor — düzeltilmeli); transonik warm-start zinciri süresinin ölçümü (Ankara verisinden).
 
 ## 0b. Ankara Otonom Dönemi (25.11.2026 → koşu bitene kadar; kullanıcı onaylı)
 Kullanıcı (Eray) bu dönemde **ulaşılamaz**. Ankara'daki Claude Code (Yiğit'in terminalinde, Yiğit'in Pro hesabı) tek denetçidir.
@@ -100,7 +115,7 @@ Kurallar:
 - Fluent oturumu **yalnızca** `src/common/fluent_session.py` → `fluent_solver(...)` context manager ile açılır. `session.exit()` v241'de `fluent.exe` + `cx2410.exe` süreçlerini açık bırakabiliyor; yardımcı modül başlatmadan sonra doğan artık süreçleri temizler. Doğrudan `pyfluent.launch_fluent` çağırma.
 - Model: **Axisymmetric**, ideal gaz hava + enerji denklemi, k-ω SST. Mach 0,06–1,26 aralığı nedeniyle sıkıştırılabilir çözüm zorunludur (density-based veya pressure-based coupled).
 - Dış sınır şartı: `pressure-far-field` (Mach + statik p, T). Statik p, T her hız noktası için o noktanın irtifasında **ISA** atmosferinden hesaplanır.
-- **Reference Values** her hız adımında güncellenir: velocity, density, temperature, pressure; **area = π·R²**, length = L. Unutulursa tüm Cd'ler hatalıdır.
+- **Reference Values** her hız adımında güncellenir: velocity, density, temperature, pressure; **area = π·R²**, length = L + 2 m (gövde dahil toplam uzunluk; `fluent_case.py` — Cd'yi etkilemez). Unutulursa tüm Cd'ler hatalıdır.
 - Mesh başına tek Fluent oturumu; hızlar artan sırada; ilk hızda başlatma (profilde tanımlı: hybrid/FMG), sonrakilerde warm-start. Mesh değişince oturum kapatılır.
 - Cd, drag report `.out` dosyasından son N iterasyon ortalamasıyla okunur. Yakınsama: residual + Cd penceresi (bağıl std). Ayrıntı: Bölüm 10.
 - Transonik bölge (Mach ≈ 0,9–1,1) zor yakınsar: ayrı rejim profili (düşük CFL, uzun rampa, yüksek iterasyon limiti).
@@ -178,8 +193,8 @@ C:\RocketCFD\
 4. ✅ Çözücü: profiller, izleme, sınıflandırma, checkpoint; hızlandırma (enhanced-CASM + CFL 50) ölçümle seçildi.
 5. ✅ Orkestratör: SQLite, kuyruk, warm-start zinciri, hız oranı kuralı, kurtarma basamakları, çoklu işçi.
 6. ✅ `rcfd.py` + runbook; kurtarma zinciri gerçek bir ıraksamayla (v2) uçtan uca doğrulandı.
-7. ⏳ Ön optimizasyon: 92 aday mesh hazır (`meshes/preopt/`), 368 koşu — Ankara'da `preopt` kampanyası; sonra `--select` + 20 mesh.
-8. ⏳ Ankara: kurulum (`docs/ankara_setup.md`), denetçi Claude Code, batch.
+7. ⏳ Ön optimizasyon: Ankara'da çalışıyor (25.11 00:22'den itibaren, `preopt_w1`); bitince denetçi 6b'yi otonom yapar.
+8. ✅ Ankara kurulumu tamam (25.11); ⏳ ana batch çalışıyor (`main_w1`, 6b sonrası `main_w2`).
 9. Son işleme (`04_postprocess.py`, henüz yazılmadı; `common/metrics.py` hazır): Cd(v) → Cd(t), K_kayıp, ∫v²·Cd dt, sıralama, grafikler.
 
 Her adımın sonunda doğrulama yapılmadan sonrakine geçilmez.

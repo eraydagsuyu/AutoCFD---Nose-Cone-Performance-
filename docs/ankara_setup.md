@@ -151,7 +151,21 @@ Claude Code'da ilk mesaj:
 > CLAUDE.md ve docs/runbook_supervisor.md'yi oku. Sen Ankara denetçisisin. `/loop 30m` ile runbook Bölüm 1'deki döngüyü uygula.
 
 ---
+## B6. Gerçekleşen kurulum (25.11.2026) — yukarıdakinden farklar
+- **B3:** Cd 0,36335 ✔ (7,1 dk, 4 çekirdek). **B3b:** 2 eşzamanlı lisans ✔.
+- **Çekirdek ölçümü (Core 5 210H, 4P HT + 4E):** 1×4 0,52 s/it; 1×8 ~1,8 s/it; 2×4 sabitlemesiz 1,43+1,43 s/it;
+  2×4 sabitlemeli 0,30 (P) + 0,43 (E) s/it → `machine_config.json`:
+  `"workers": 2, "fluent_cores": 4, "cpu_affinity": {"preopt_w1": [0,2,4,6], "main_w1": [8,9,10,11], "main_w2": [0,2,4,6]}`.
+- **B4:** `start_batch.ps1` yerine `scripts\resume_batch.ps1` (kampanya durumuna göre işçileri seçer; 6b sırasında
+  `data\6b_in_progress` varken işçi başlatmaz).
+- **Görev Zamanlayıcı:** makine kullanıcısı kendi PowerShell'inde `scripts\install_tasks.ps1` çalıştırır (SSH'tan kalıcı görev
+  oluşturma yapılmadı). `schtasks /RU <kısa ad>` bilgisayar adı = kullanıcı adı olduğunda "UserId" hatası verir — betik tam adı kullanır.
+- **B5:** denetçi `/loop 1h` (Pro kotası), izinler `.claude/settings.local.json` (Git dışı; rcfd/preopt/mesh/start_batch izinli,
+  `git push`, `src/` düzenleme, `Stop-Process` yasak), `autoContinueAtUsageLimit: true`.
+- `.ps1` dosyaları **UTF-8 BOM'lu** olmalı (PS 5.1, cp1254); aksi hâlde ayrıştırma hatası.
+
 ## C. Günlük işler
-- İlerleme: `ssh ankara "cd C:\RocketCFD; .venv\Scripts\python.exe src\rcfd.py status"`
+- İlerleme: `ssh ankara "cd C:\RocketCFD; .venv\Scripts\python.exe src\tools\progress.py"` (ayrıntı: `src\rcfd.py status`)
+- Dönüşte sonuçları alma prosedürü: `CLAUDE.md` Bölüm 0 "Dönüşte".
 - Sonuçları İstanbul'a almak: Ankara'da `rcfd export` + commit/push → İstanbul'da `git pull`.
 - Durdurma: `rcfd stop` (mevcut koşu bitince). Devam: `rcfd resume` + `scripts\start_batch.ps1`.
