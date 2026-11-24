@@ -28,15 +28,9 @@ if ((Test-Path $marker) -and ((Get-Date) - (Get-Item $marker).LastWriteTime).Tot
 }
 
 $py = Join-Path $Root ".venv\Scripts\python.exe"
-$q = "import sqlite3,sys; c=sqlite3.connect(r'data\results.db'); " +
-     "f=lambda k: c.execute(""SELECT COUNT(*) FROM runs WHERE campaign=? AND status IN ('pending','retry_pending','running','needs_review')"",(k,)).fetchone()[0]; " +
-     "print(f('preopt'), f('main'))"
-$counts = (& $py -c $q).Trim() -split '\s+'
-$preoptLeft, $mainLeft = [int]$counts[0], [int]$counts[1]
-# 6b yapıldı mı: serbest parametreli her profil için 4 L'nin hepsinde 'selected' var mı
-$qs = "import json; n=json.load(open(r'config\nose_params.json',encoding='utf-8'))['free_params']; " +
-      "print(int(all(len(v.get('selected',{}))>=4 for v in n.values() if isinstance(v,dict))))"
-$selected = [int]((& $py -c $qs).Trim())
+# preopt/main bitmemiş koşu sayısı ve 6b seçimi yapıldı mı (src\tools\batch_state.py, salt okunur)
+$counts = (& $py (Join-Path $Root "src\tools\batch_state.py")).Trim() -split '\s+'
+$preoptLeft, $mainLeft, $selected = [int]$counts[0], [int]$counts[1], [int]$counts[2]
 Write-Log "resume: preopt bitmemiş=$preoptLeft, main bitmemiş=$mainLeft, seçim yapıldı=$selected"
 
 $sb = Join-Path $PSScriptRoot "start_batch.ps1"
