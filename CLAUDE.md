@@ -3,6 +3,23 @@
 Bu dosya her oturumda okunur. Buradaki kurallar ve sabitler bağlayıcıdır; değiştirmeden önce kullanıcıya sor.
 İletişim dili: **Türkçe** (teknik terimler ve kod tanımlayıcıları orijinal hâliyle).
 
+## 0. Güncel Durum ve Sonraki Oturum (son güncelleme: 24.11.2026 02:45)
+**Durum:** Geometri (80/80), mesh (80 ana + 92 ön optimizasyon adayı, hepsi Fluent kontrolünden geçti, Git'te), çözücü,
+orkestratör (çoklu işçi), `rcfd`, runbook ve belgeler (`docs/pdf/` 3 PDF, `README.md`) **hazır ve push'landı**.
+Üretim koşusu henüz başlamadı. İstanbul'daki `data/results.db` yalnızca test verisi içerir (P16_L300 v1,2,3,5,6,15); Ankara temiz başlar.
+
+**Sonraki oturum: 24.11.2026, 22:45–23:00 — Ankara kurulumu.**
+- Önce: arkadaş `docs/pdf/Talimatlar.pdf` adımlarını uygular (Tailscale, OpenSSH, Git/Python 3.11/Node, clone, setup_env, Claude Code).
+- Eray'ın önceden göndermesi gerekenler: Tailscale daveti, SSH açık anahtarı (`docs/ankara_setup.md` B1). Depo herkese açık görünüyor;
+  gizliye alınırsa Ankara'da `git clone` için token gerekir.
+- Oturumda sıra (`docs/ankara_setup.md` B1–B5): SSH bağlantısı → `machine_config.json` (machine_name ankara, allow_batch true,
+  workers/fluent_cores B3b lisans testine göre: 2×4 veya 1×8) → duman testi (P16_L300 v5, Cd ≈ 0,3633) → iki oturum lisans testi →
+  `src\00_preopt.py --build` → `start_batch.ps1 -Campaign preopt` + `-Campaign main` → SSH kopma testi → Ankara'da Claude Code denetçi (`/loop 30m`).
+- İlk geometride doğrulanacaklar: transonik warm-start zinciri süresi (~4,5 dk varsayımı), 4 çekirdekli işçi süresi, `rcfd status` ETA (~3 gün hedef).
+
+**Açık konular:** ön optimizasyon bitince `--select` + 20 mesh yenileme + main yeniden başlatma (kullanıcı onayı, runbook 6b);
+mesh bağımsızlığı (GCI) ve y⁺ çıkarımı (ana koşu sonrası öneri); nihai `04_postprocess.py` raporu.
+
 ## 1. Proje Özeti
 - Amaç: Model roket burun konisi seçimi. Her geometri için 2D **eksenel simetrik** Ansys Fluent analiziyle Cd(v) elde edilir, uçuş profili v(t) ile Cd(t)'ye çevrilir, **K_kayıp = ∫ Cd(t) dt** (trapez) hesaplanır; en düşük K_kayıp kazanır.
 - Ana referans belge: `Model Roket Burun Konisi Parametrik CFD Otomasyon Mimarisi.pdf` (mimari, fazlar, SQLite şeması, klasör yapısı).
