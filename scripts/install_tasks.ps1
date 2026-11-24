@@ -10,7 +10,8 @@
 param([switch]$DryRun)
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
-$user = "$env:USERDOMAIN\$env:USERNAME"
+# whoami ile aynı kaynak ($env:USERDOMAIN SSH oturumunda "WORKGROUP" dönebiliyor)
+$user = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 $ps = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
 
 function Register-RcfdTask([string]$Name, [string]$Exe, [string]$TaskArgs, $Trigger) {
