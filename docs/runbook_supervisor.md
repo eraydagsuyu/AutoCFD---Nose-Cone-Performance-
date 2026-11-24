@@ -73,14 +73,18 @@ Koşul: aynı düzeltme aynı rejimde ≥ 3 farklı geometride başarılı olduy
 Ön koşul: `rcfd --campaign preopt status` → bitmemiş koşu yok (`needs_review` kalmışsa önce Bölüm 2 ile çöz ya da
 3 başarısız denetçi denemesinden sonra gerekçeyle `skip`). `preopt_w1` kuyruk boşalınca kendiliğinden çıkar.
 ```
+New-Item -ItemType File -Force data\6b_in_progress          # resume_batch bu sürede işçi başlatmaz (ZORUNLU, ilk adım)
 .venv\Scripts\python.exe src\00_preopt.py --select          # nose_params.json 'selected' + docs/preopt_report.md
                                                             # (skipped aday varsa: --select --allow-partial)
 .venv\Scripts\python.exe src\01_mesh_gen.py --geom <betiğin yazdırdığı 20 geometri>
 .venv\Scripts\python.exe src\tools\check_mesh_fluent.py meshes\P02_L200.msh.gz ...   # 20 mesh; min OQ ≥ 0,05
 .venv\Scripts\python.exe src\03_orchestrator.py --mode batch --enqueue-only        # 20 geometri × 20 hız kuyruğa (işçiler durmaz)
+Remove-Item data\6b_in_progress
 powershell -ExecutionPolicy Bypass -File scripts\start_batch.ps1 -Campaign main -Workers 2   # main_w1 atlanır, main_w2 başlar
 git add config\nose_params.json docs meshes; git commit -m "Ön optimizasyon seçimi + 20 mesh (Ankara denetçisi)"
 ```
+- 6b sırasında `main_w1` çalışmaya devam eder (zaten başlamış, yeniden kuyruğa eklemez); ikinci lisans mesh kontrolüne kalır.
+  6b'yi başlatmadan önce `preopt_w1`'in çıktığını doğrula (`rcfd status` kalp atışı / `Get-Process`).
 - **Push yapma** (Ankara'nın GitHub yazma yetkisi yok); kullanıcı dönünce yerel commit'i alır.
 - Bir mesh kalite kapısını geçemezse (üretimde hata ya da Fluent min OQ < 0,05): `meshes\<ID>.msh.gz` hâlâ **eski geçici
   parametreli** mesh'tir ve yanlış geometriyle çözülür → `--enqueue-only`'den **önce** o dosyayı sil (Git'ten geri alınabilir);
