@@ -60,19 +60,26 @@ def main() -> int:
     first = con.execute("SELECT MIN(updated_at) t FROM runs WHERE status IN ('done','done_flagged')").fetchone()["t"]
     recent = con.execute("SELECT COUNT(*) n FROM runs WHERE status IN ('done','done_flagged') AND updated_at>=?",
                          (since,)).fetchone()["n"]
-    if first and recent:
-        hours = min(6.0, (now - datetime.strptime(first, "%Y-%m-%d %H:%M:%S")).total_seconds() / 3600)
-        rate = recent / max(hours, 0.25)
-        left = tot_target - tot_done
+    # Batch başlangıcı: işçi kalp atışlarından değil, ilk batch olayından; tekli test koşuları sayılmaz
+    start = con.execute("SELECT MIN(ts) t FROM events WHERE kind='start' AND message LIKE '%mode=batch%'").fetchone()["t"] \
+        if con.execute("SELECT name FROM sqlite_master WHERE name='events'").fetchone() else None
+    hours = (now - datetime.strptime(start or first, "%Y-%m-%d %H:%M:%S")).total_seconds() / 3600 if (start or first) else 0
+    left = tot_target - tot_done
+    if hours >= 2 and recent >= 20:
+        rate = recent / min(6.0, hours)
         eta = now + timedelta(hours=left / rate)
         print(f"  Hız: ~{rate:.1f} koşu/saat   Kalan: {left} koşu   Tahmini bitiş: {eta:%d.%m.%Y %H:%M} "
               f"(~{left / rate / 24:.1f} gün)")
+    else:
+        print(f"  Kalan: {left} koşu   Tahmini bitiş: hesaplanıyor (ilk 2 saat ve 20 koşu sonrası gösterilir)")
     print()
 
     print("  İşçiler:")
     any_w = False
     for row in con.execute("SELECT value FROM control WHERE key LIKE 'heartbeat%' ORDER BY key"):
         h = json.loads(row["value"])
+        if h.get("worker") == "single":      # tekli test koşusunun eski kaydı — toplu işçi değil
+            continue
         age = (time.time() - time.mktime(time.strptime(h["ts"], "%Y-%m-%d %H:%M:%S"))) / 60
         state = "çalışıyor" if age < 15 else "!! YANIT YOK (15 dk+) !!"
         print(f"    {h.get('worker', '?'):<10} {state:<24} {age:4.0f} dk önce  {h.get('current', '')}")
