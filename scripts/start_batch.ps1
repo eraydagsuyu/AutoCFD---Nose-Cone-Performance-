@@ -1,4 +1,4 @@
-# Toplu koşu işçilerini SSH oturumundan TAMAMEN bağımsız süreçler olarak başlatır (Ankara).
+﻿# Toplu koşu işçilerini SSH oturumundan TAMAMEN bağımsız süreçler olarak başlatır (Ankara).
 #
 # Neden Start-Process değil: Windows OpenSSH sunucusu, oturumdan başlatılan tüm süreçleri bir Job Object'e
 # koyar ve bağlantı kopunca hepsini sonlandırabilir. Win32_Process.Create (WMI) ile başlatılan süreç

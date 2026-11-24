@@ -111,6 +111,10 @@ Kurallar:
 - **Ankara (uzak, üretim):** Tailscale + OpenSSH ile erişim; `git pull` → `--mode batch`. Toplu koşu SSH'tan bağımsız arka plan süreci olarak (`Start-Process`) başlatılır, tüm çıktı `logs/` altına.
 - Durum takibi: `data/results.db` (SQLite) — şema ve durum makinesi Bölüm 10'da. Yeniden başlatmada yalnızca bekleyen (ve yarım kalmış `running`) koşular çözülür; tamamlananlar tekrarlanmaz.
 - Her istisna yakalanır ve SQLite'a (`attempts.error_msg`) + `logs/events.jsonl` + log dosyasına yazılır; tek bir koşu hatası tüm batch'i durdurmaz.
+- **Sonuç yedeği:** her koşu kesinleştiğinde (`done`, `done_flagged`, `needs_review:<sınıf>`) orkestratör `data/results_log.csv`'ye
+  bir satır ekler (`src/common/results_log.py`; kilitli, fsync'li, çoklu işçi güvenli). SQLite asıl kayıttır; CSV kesintiye karşı okunabilir yedektir.
+- **`.ps1` dosyaları UTF-8 BOM'lu kaydedilmeli:** Windows PowerShell 5.1 BOM'suz dosyayı ANSI (Ankara: cp1254) okur; Türkçe karakter
+  ve `—` ayrıştırmayı bozar (2026-11-24 Ankara'da `setup_env.ps1` ve `start_batch.ps1` çalışmadı, düzeltildi).
 
 ## 7. Klasör Yapısı
 ```

@@ -29,6 +29,7 @@ from common.atmosphere import freestream  # noqa: E402
 from common.config import CONFIG_DIR, DATA_DIR, LOG_DIR, MESH_DIR, load_machine_config, load_nose_params, load_velocities  # noqa: E402
 from common.fluent_case import run_attempt, set_freestream, setup_physics  # noqa: E402
 from common.fluent_session import fluent_solver  # noqa: E402
+from common.results_log import append_result  # noqa: E402
 from common.solver_profile import (OverrideError, load_physics, profile_hash, regime_for,  # noqa: E402
                                    resolve_profile, validate_overrides)
 
@@ -451,6 +452,7 @@ class Orchestrator:
                     db.event(con, "INFO", outcome, f"Cd={res.cd:.5f} it={res.iterations} {res.elapsed_s:.0f}s "
                                                    f"{res.message}".strip(), rid, gid)
             if ok:
+                self._log_result(run, p, fs, regime, outcome, res, attempt_no, init_method)
                 self._save_fields(solver, gid, run["vel_idx"], workdir)
                 self.session_vel = fs.velocity
                 return True
@@ -466,6 +468,7 @@ class Orchestrator:
                 if k >= len(ladder):
                     con.execute("UPDATE runs SET status='needs_review', updated_at=? WHERE run_id=?", (db.now(), rid))
                     db.event(con, "WARNING", "needs_review", f"{outcome}: {res.message} — otomatik basamaklar bitti", rid, gid)
+                    self._log_result(run, p, fs, regime, f"needs_review:{outcome}", res, attempt_no, init_method)
                     if broken:
                         raise SessionBroken(res.message)
                     return False
@@ -485,6 +488,21 @@ class Orchestrator:
             prev_ok = False
             if broken or step.get("restart_session"):
                 raise SessionBroken(res.message or outcome)
+
+    def _log_result(self, run: dict, p: dict, fs, regime: str, status: str, res, attempt_no: int,
+                    init_method: str) -> None:
+        """data/results_log.csv yedek kaydı (SQLite asıl kayıt). Hata koşuyu etkilemez."""
+        try:
+            append_result({
+                "timestamp": db.now(), "machine": self.machine, "campaign": self.campaign, "worker": self.worker,
+                "geom_id": run["geom_id"], "vel_idx": run["vel_idx"], "velocity_ms": p["velocity_ms"],
+                "mach": fs.mach, "altitude_m": p["altitude_m"], "regime": regime, "status": status,
+                "cd": res.cd, "attempt_no": attempt_no, "iterations": res.iterations, "elapsed_s": res.elapsed_s,
+                "init_method": init_method, "cd_rel_std": getattr(res, "cd_rel_std", None),
+                "cd_rel_amp": getattr(res, "cd_rel_amp", None), "message": (res.message or "")[:200],
+            })
+        except Exception:  # noqa: BLE001
+            log.exception("results_log.csv yazılamadı (SQLite kaydı etkilenmedi)")
 
     def _save_fields(self, solver, gid: str, vel_idx: int, workdir: Path) -> None:
         d = FIELDS_DIR / (gid if self.campaign == "main" else f"{self.campaign}/{gid}")

@@ -1,4 +1,4 @@
-# RocketCFD Python ortam kurulumu (İstanbul ve Ankara'da aynı).
+﻿# RocketCFD Python ortam kurulumu (İstanbul ve Ankara'da aynı).
 # Kullanım (proje kökünden):  powershell -ExecutionPolicy Bypass -File scripts\setup_env.ps1
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
