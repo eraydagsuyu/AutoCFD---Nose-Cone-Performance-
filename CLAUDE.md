@@ -20,6 +20,28 @@ orkestratör (çoklu işçi), `rcfd`, runbook ve belgeler (`docs/pdf/` 3 PDF, `R
 **Açık konular:** ön optimizasyon bitince `--select` + 20 mesh yenileme + main yeniden başlatma (kullanıcı onayı, runbook 6b);
 mesh bağımsızlığı (GCI) ve y⁺ çıkarımı (ana koşu sonrası öneri); nihai `04_postprocess.py` raporu.
 
+## 0b. Ankara Otonom Dönemi (25.11.2026 → koşu bitene kadar; kullanıcı onaylı)
+Kullanıcı (Eray) bu dönemde **ulaşılamaz**. Ankara'daki Claude Code (Yiğit'in terminalinde, Yiğit'in Pro hesabı) tek denetçidir.
+Kullanıcı ~3–5 gün sonra SSH ile bağlanıp sonuçları alacak.
+- **Döngü:** `/loop 1h` ile `docs/runbook_supervisor.md` Bölüm 1. Pro kullanım kotasını korumak için her turda kısa ol;
+  sorun yoksa tek satır durum yaz. Kota dolarsa `autoContinueAtUsageLimit` ile kendiliğinden devam edilir; batch denetçisiz de çalışır.
+- **Ek yetki (yalnızca bu dönem):** runbook **6b** (preopt bitince `--select` → 20 mesh üretimi → Fluent mesh kontrolü →
+  `--enqueue-only` → `main_w2`) kullanıcıyı beklemeden yapılır. Diğer bütün yasaklar (fizik, domain, R/L, sınır adları,
+  `done` sonuç silme, `src/` düzenleme) aynen geçerli.
+- **Git:** yalnızca yerel commit; **push yok** (Ankara'nın GitHub yazma yetkisi yok). `git pull` gerekmez.
+- **Kayıt:** her önemli karar/müdahale `docs/ankara_notes.md`'ye zaman damgasıyla bir satır (kullanıcı dönünce okuyacak).
+- **İşçi düzeni (ölçümle, 25.11):** 2 işçi × 4 çekirdek, **CPU sabitlemeli** (`machine_config.json` → `cpu_affinity`):
+  `preopt_w1` → P çekirdekleri [0,2,4,6], `main_w1` → E çekirdekleri [8–11], preopt bitince `main_w2` → [0,2,4,6].
+  Ankara Intel Core 5 210H = 4P(HT)+4E. Ölçüm (P16_L300 v5, s/iterasyon): 1×4 sabitlemesiz 0,52; 1×8 ~1,8; 2×4 sabitlemesiz
+  1,43 + 1,43; **2×4 sabitlemeli 0,30 (P) + 0,43 (E) → ~3× toplam verim**. `I_MPI_PIN_PROCESSOR_LIST` Fluent'te etkisiz;
+  sabitleme `fluent_session._pin` ile süreç affinity'si olarak yapılır. **Asla 2'den fazla Fluent oturumu açma.**
+- **Fluent süreç sahipliği:** başlatmalar `data/fluent_launch.lock` ile sıralı; her oturum yalnızca kendi süreçlerini temizler
+  (eski kod, diğer işçinin Fluent'ini öldürebiliyordu — 25.11 düzeltildi).
+- **Kesinti sonrası:** Görev Zamanlayıcı `RocketCFD-Resume` (oturum açılınca) `scripts\resume_batch.ps1`'i çalıştırır.
+  Denetçi oturumu kesintiden sonra Yiğit'in yeniden başlatmasını bekler; işçi yoksa denetçi de `resume_batch.ps1`'i çalıştırabilir.
+- **Sonuç yedeği:** `data/results_log.csv` (her koşu sonrası, fsync'li) + `data/results.db`. `rcfd export` günde bir kez (yerel).
+- **Ankara'da yapılmaması gereken:** Fluent GUI açma, ağır program, `rcfd stop` (yalnızca bir işçiyi durdurur).
+
 ## 1. Proje Özeti
 - Amaç: Model roket burun konisi seçimi. Her geometri için 2D **eksenel simetrik** Ansys Fluent analiziyle Cd(v) elde edilir, uçuş profili v(t) ile Cd(t)'ye çevrilir, **K_kayıp = ∫ Cd(t) dt** (trapez) hesaplanır; en düşük K_kayıp kazanır.
 - Ana referans belge: `Model Roket Burun Konisi Parametrik CFD Otomasyon Mimarisi.pdf` (mimari, fazlar, SQLite şeması, klasör yapısı).

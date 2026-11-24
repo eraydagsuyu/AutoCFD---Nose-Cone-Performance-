@@ -67,16 +67,26 @@ Koşul: aynı düzeltme aynı rejimde ≥ 3 farklı geometride başarılı olduy
 - Bir rejimde koşuların > %20'si `needs_review`.
 - Fizik/mesh/domain değişikliği gerektiğini düşündüğün her durum (öneri yaz, uygulama).
 
-## 6b. Ön optimizasyon bitince (kullanıcı onayıyla)
-`rcfd --campaign preopt status` tüm koşuları `done/done_flagged/skipped` gösterdiğinde kullanıcıya bildir. Onay gelince:
+## 6b. Ön optimizasyon bitince
+**Otonom dönemde (CLAUDE.md Bölüm 0b) denetçi bunu kullanıcıyı beklemeden yapar.** Diğer zamanlarda kullanıcı onayı gerekir.
+
+Ön koşul: `rcfd --campaign preopt status` → bitmemiş koşu yok (`needs_review` kalmışsa önce Bölüm 2 ile çöz ya da
+3 başarısız denetçi denemesinden sonra gerekçeyle `skip`). `preopt_w1` kuyruk boşalınca kendiliğinden çıkar.
 ```
 .venv\Scripts\python.exe src\00_preopt.py --select          # nose_params.json 'selected' + docs/preopt_report.md
+                                                            # (skipped aday varsa: --select --allow-partial)
 .venv\Scripts\python.exe src\01_mesh_gen.py --geom <betiğin yazdırdığı 20 geometri>
-.venv\Scripts\python.exe src\tools\check_mesh_fluent.py meshes\P02_L200.msh.gz ...   # 20 mesh
-git add config\nose_params.json docs meshes && git commit -m "Ön optimizasyon seçimi + 20 mesh" && git push
-powershell -ExecutionPolicy Bypass -File scripts\start_batch.ps1 -Campaign main -Workers 1   # yeni 20 geometri kuyruğa eklenir
+.venv\Scripts\python.exe src\tools\check_mesh_fluent.py meshes\P02_L200.msh.gz ...   # 20 mesh; min OQ ≥ 0,05
+.venv\Scripts\python.exe src\03_orchestrator.py --mode batch --enqueue-only        # 20 geometri × 20 hız kuyruğa (işçiler durmaz)
+powershell -ExecutionPolicy Bypass -File scripts\start_batch.ps1 -Campaign main -Workers 2   # main_w1 atlanır, main_w2 başlar
+git add config\nose_params.json docs meshes; git commit -m "Ön optimizasyon seçimi + 20 mesh (Ankara denetçisi)"
 ```
-Ana kampanyanın işçisi çalışıyorsa önce `rcfd stop`, mevcut koşu bitince yeniden başlat (yeni geometriler başlangıçta eklenir).
+- **Push yapma** (Ankara'nın GitHub yazma yetkisi yok); kullanıcı dönünce yerel commit'i alır.
+- Bir mesh kalite kapısını geçemezse (üretimde hata ya da Fluent min OQ < 0,05): `meshes\<ID>.msh.gz` hâlâ **eski geçici
+  parametreli** mesh'tir ve yanlış geometriyle çözülür → `--enqueue-only`'den **önce** o dosyayı sil (Git'ten geri alınabilir);
+  koşuları `mesh_error` olur, diğerleri çözülür. Başka aday seçmek geometri kararıdır → yapma, `docs/ankara_notes.md`'ye yaz.
+- Her mesh'in yeniden üretildiğini doğrula: 20 dosyanın değiştirilme zamanı `--select`'ten sonra olmalı.
+- `rcfd stop` kullanma: bayrağı ilk gören tek işçi durur (bilinen sınırlama).
 
 ## 7. İlerleme raporu
 `rcfd export` → `docs/results/` (runs ve Cd matrisi CSV). Günde bir kez commit + push:

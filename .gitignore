@@ -31,3 +31,6 @@ desktop.ini
 
 # Mesh önizlemeleri (yeniden üretilebilir, büyük)
 docs/mesh/preview_*.png
+
+# Claude Code yerel ayarları (makineye özel)
+.claude/settings.local.json

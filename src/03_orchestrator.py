@@ -304,7 +304,8 @@ class Orchestrator:
             sess_dir = LOG_DIR / "sessions" / f"{gid}_{time.strftime('%Y%m%d-%H%M%S')}"
             sess_dir.mkdir(parents=True, exist_ok=True)
             try:
-                with fluent_solver(self.cfg, cwd=sess_dir, processor_count=self.cores) as solver:
+                with fluent_solver(self.cfg, cwd=sess_dir, processor_count=self.cores,
+                                   cpu_list=(self.cfg.get("cpu_affinity") or {}).get(self.worker)) as solver:
                     opened_once = True
                     solver.tui.file.start_transcript(str(sess_dir / "fluent.trn"))
                     setup_physics(solver, msh, meta, self.phys, sess_dir)
@@ -534,7 +535,19 @@ def main() -> int:
     ap.add_argument("--worker", default="w1", help="işçi adı (çoklu işçi: w1, w2, ...)")
     ap.add_argument("--idle-hours", type=float, default=12.0,
                     help="batch: kuyruk boşalıp yalnızca needs_review kalınca denetçiyi bekleme süresi")
+    ap.add_argument("--enqueue-only", action="store_true",
+                    help="main: kesinleşen geometrilerin koşularını kuyruğa ekle ve çık (çalışan işçileri durdurmadan; runbook 6b)")
     args = ap.parse_args()
+
+    if args.enqueue_only:
+        if args.campaign != "main":
+            ap.error("--enqueue-only yalnızca main kampanyası için")
+        with db.connect() as con:
+            added = db.ensure_runs(con, "main", main_geoms(), velocity_points(load_physics()))
+            if added:
+                db.event(con, "INFO", "queue", f"{added} koşu kuyruğa eklendi (main, --enqueue-only)")
+        print(f"{added} koşu kuyruğa eklendi (main). Çalışan işçiler yeni geometrileri sıradaki sahiplenmede alır.")
+        return 0
 
     LOG_DIR.mkdir(exist_ok=True)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s",
