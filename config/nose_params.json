@@ -55,7 +55,7 @@
     "xto_x0o": "08: rn küresinin tanjant ogive'e teğet noktası ve küre merkezi (analitik)"
   },
   "free_params": {
-    "status": "pending_preopt",
+    "status": "selected",
     "note": "Değerler 00_preopt.py ön optimizasyonu ile her L için ayrı belirlenir ve selected altına 'L200' gibi anahtarlarla yazılır. selected boşsa provisional (geçici, aday aralığı ortası) kullanılır.",
     "02": {
       "rn_over_R": {
@@ -69,7 +69,20 @@
       "provisional": {
         "rn_over_R": 0.1
       },
-      "selected": {}
+      "selected": {
+        "L200": {
+          "rn_over_R": 0.3
+        },
+        "L300": {
+          "rn_over_R": 0.3
+        },
+        "L400": {
+          "rn_over_R": 0.3
+        },
+        "L500": {
+          "rn_over_R": 0.05
+        }
+      }
     },
     "03": {
       "L1_over_L": {
@@ -91,7 +104,24 @@
         ]
       },
       "constraint": "0<L1<L, 0<R1<R, dışbükeylik: R1/L1 > (R-R1)/(L-L1)",
-      "selected": {},
+      "selected": {
+        "L200": {
+          "L1_over_L": 0.7,
+          "R1_over_R": 0.85
+        },
+        "L300": {
+          "L1_over_L": 0.7,
+          "R1_over_R": 0.85
+        },
+        "L400": {
+          "L1_over_L": 0.5,
+          "R1_over_R": 0.6
+        },
+        "L500": {
+          "L1_over_L": 0.7,
+          "R1_over_R": 0.75
+        }
+      },
       "provisional": {
         "L1_over_L": 0.5,
         "R1_over_R": 0.7
@@ -108,7 +138,20 @@
         ]
       },
       "constraint": "Rt < R",
-      "selected": {},
+      "selected": {
+        "L200": {
+          "Rt_over_R": 0.2
+        },
+        "L300": {
+          "Rt_over_R": 0.1
+        },
+        "L400": {
+          "Rt_over_R": 0.05
+        },
+        "L500": {
+          "Rt_over_R": 0.05
+        }
+      },
       "provisional": {
         "Rt_over_R": 0.15
       }
@@ -125,7 +168,20 @@
       "provisional": {
         "rn_over_R": 0.1
       },
-      "selected": {}
+      "selected": {
+        "L200": {
+          "rn_over_R": 0.3
+        },
+        "L300": {
+          "rn_over_R": 0.05
+        },
+        "L400": {
+          "rn_over_R": 0.05
+        },
+        "L500": {
+          "rn_over_R": 0.1
+        }
+      }
     },
     "19": {
       "a_over_L": {
@@ -138,7 +194,20 @@
         ]
       },
       "constraint": "a > 0",
-      "selected": {},
+      "selected": {
+        "L200": {
+          "a_over_L": 1.0
+        },
+        "L300": {
+          "a_over_L": 1.0
+        },
+        "L400": {
+          "a_over_L": 0.25
+        },
+        "L500": {
+          "a_over_L": 0.25
+        }
+      },
       "provisional": {
         "a_over_L": 0.25
       }

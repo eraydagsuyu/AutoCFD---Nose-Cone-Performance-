@@ -68,12 +68,6 @@
       "L": 0.2,
       "free": {
         "rn_over_R": 0.3
-      },
-      "mesh": {
-        "ok": true,
-        "cells": 92172,
-        "max_skew": 0.75,
-        "msg": ""
       }
     },
     {
