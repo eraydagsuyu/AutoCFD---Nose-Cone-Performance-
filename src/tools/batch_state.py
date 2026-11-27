@@ -1,4 +1,4 @@
-"""resume_batch.ps1 için durum özeti (salt okunur). Çıktı tek satır: <preopt_bitmemiş> <main_bitmemiş> <seçim_yapıldı 0|1>
+"""resume_batch.ps1 için durum özeti (salt okunur). Çıktı tek satır: <preopt_bitmemiş> <main_bitmemiş> <seçim_yapıldı 0|1> <açık_kontrol_bayrakları|-> <gci_bitmemiş>
 
 bitmemiş = pending / retry_pending / running / needs_review; seçim_yapıldı = serbest parametreli her profilde 4 L için 'selected' var.
 """
@@ -19,12 +19,15 @@ def main() -> None:
     db = ROOT / "data" / "results.db"
     if db.exists():
         con = sqlite3.connect(f"file:{db}?mode=ro", uri=True, timeout=30)
-        p, m = left(con, "preopt"), left(con, "main")
+        p, m, g = left(con, "preopt"), left(con, "main"), left(con, "gci")
+        flags = ",".join(k for (k,) in con.execute(
+            "SELECT key FROM control WHERE key IN ('pause','stop_after_current') AND value='1' ORDER BY key")) or "-"
     else:
-        p = m = 0
+        p = m = g = 0
+        flags = "-"
     free = json.loads((ROOT / "config" / "nose_params.json").read_text(encoding="utf-8"))["free_params"]
     sel = int(all(len(v.get("selected", {})) >= 4 for v in free.values() if isinstance(v, dict)))
-    print(p, m, sel)
+    print(p, m, sel, flags, g)
 
 
 if __name__ == "__main__":

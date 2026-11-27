@@ -1,0 +1,10 @@
+min_orthogonal_quality,max_aspect_ratio,min_2d_volume,n_cells,non_positive_volume,left_handed_faces,zones_ok,read_ok,error,ok,geom_id
+0.265317,3025.67,,238955,False,False,True,True,,True,P01_L300_g1
+0.112486,2999.62,,106731,False,False,True,True,,True,P01_L300_g2
+0.255548,3012.22,,47774,False,False,True,True,,True,P01_L300_g3
+0.241208,3025.67,,230840,False,False,True,True,,True,P04_L300_g1
+0.223671,2999.62,,104596,False,False,True,True,,True,P04_L300_g2
+0.316353,3012.22,,47216,False,False,True,True,,True,P04_L300_g3
+0.265317,3025.67,,229823,False,False,True,True,,True,P16_L300_g1
+0.310828,2999.62,,103985,False,False,True,True,,True,P16_L300_g2
+0.30233,3012.22,,47788,False,False,True,True,,True,P16_L300_g3

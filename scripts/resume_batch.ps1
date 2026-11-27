@@ -31,12 +31,23 @@ $py = Join-Path $Root ".venv\Scripts\python.exe"
 # preopt/main bitmemiş koşu sayısı ve 6b seçimi yapıldı mı (src\tools\batch_state.py, salt okunur)
 $counts = (& $py (Join-Path $Root "src\tools\batch_state.py")).Trim() -split '\s+'
 $preoptLeft, $mainLeft, $selected = [int]$counts[0], [int]$counts[1], [int]$counts[2]
+# Kullanıcı/denetçi bilerek durdurduysa (rcfd stop / pause) otomatik yeniden başlatma yapılmaz; devam için `rcfd resume`.
+if ($counts.Count -gt 3 -and $counts[3] -ne "-") {
+    Write-Log "resume: kontrol bayrağı açık ($($counts[3])) -> işçi başlatılmadı (devam için: rcfd resume)"
+    exit 0
+}
 Write-Log "resume: preopt bitmemiş=$preoptLeft, main bitmemiş=$mainLeft, seçim yapıldı=$selected"
 
 $sb = Join-Path $PSScriptRoot "start_batch.ps1"
 if ($preoptLeft -gt 0) {
     & powershell -NoProfile -ExecutionPolicy Bypass -File $sb -Campaign preopt -Workers 1 | ForEach-Object { Write-Log $_ }
     & powershell -NoProfile -ExecutionPolicy Bypass -File $sb -Campaign main -Workers 1 | ForEach-Object { Write-Log $_ }
+} elseif ($counts.Count -gt 4 -and [int]$counts[4] -gt 0) {
+    # GCI çalışması (27.11): main_w1 (E çekirdekleri) + gci_w1 (P çekirdekleri). GCI bitince gci_w1 çıkar;
+    # bir sonraki 30 dk'lık çalıştırma aşağıdaki son dala düşer ve main_w2'yi başlatır.
+    Write-Log "resume: gci bitmemiş=$($counts[4]) -> main_w1 + gci_w1"
+    & powershell -NoProfile -ExecutionPolicy Bypass -File $sb -Campaign main -Workers 1 | ForEach-Object { Write-Log $_ }
+    & powershell -NoProfile -ExecutionPolicy Bypass -File $sb -Campaign gci -Workers 1 | ForEach-Object { Write-Log $_ }
 } elseif ($selected -eq 0) {
     Write-Log "resume: preopt bitti, 6b bekleniyor (denetçi) -> yalnızca main_w1"
     & powershell -NoProfile -ExecutionPolicy Bypass -File $sb -Campaign main -Workers 1 | ForEach-Object { Write-Log $_ }

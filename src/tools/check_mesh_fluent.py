@@ -1,5 +1,7 @@
 """Bir veya daha çok .msh dosyasını headless Fluent'te okuyup mesh/check + mesh/quality çalıştırır.
-Tüm dosyalar tek Fluent oturumunda sırayla kontrol edilir.
+Her dosya AYRI bir Fluent oturumunda kontrol edilir: tek oturumda ikinci `read_case` sessizce uygulanmıyordu
+(2026-11-27: transkriptte yalnızca ilk "Reading", sonraki tüm dosyalar ilk mesh'in kalitesini raporladı). Ayrıca her
+transkriptte bu dosyanın "Reading" satırı ve hücre sayısı aranır; yoksa sonuç geçersizdir (read_ok = False).
 
 Kullanım:
   .venv\\Scripts\\python.exe src\\tools\\check_mesh_fluent.py meshes\\P16_L300.msh [diğer.msh ...]
@@ -35,6 +37,8 @@ def parse_transcript(text: str) -> dict:
     m = re.search(r"minimum 2d volume \(m3\):\s*([0-9.eE+-]+)", text)
     if m:
         out["min_2d_volume"] = float(m.group(1))
+    m = re.search(r"(\d+)\s+\S*\s*cells, zone", text)
+    out["n_cells"] = int(m.group(1)) if m else None
     out["non_positive_volume"] = "non-positive volume" in text
     out["left_handed_faces"] = "left-handed faces" in text
     zones = set(re.findall(r"(?m)^\s*\d+\s+(\S+)\s+(?:wall|axis|pressure-far-field|interior|fluid)\s", text))
@@ -59,25 +63,35 @@ def main() -> int:
     work = LOG_DIR / "mesh_check"
     work.mkdir(parents=True, exist_ok=True)
     rows = []
-    with fluent_solver(load_machine_config(), cwd=work, processor_count=2) as solver:
-        solver.tui.define.models.axisymmetric("yes")
-        for i, msh in enumerate(files, 1):
-            gid = msh.name.split(".")[0]
-            trn = work / f"{gid}.trn"
-            trn.unlink(missing_ok=True)
-            solver.tui.file.start_transcript(str(trn))
-            solver.tui.file.read_case(str(msh.resolve()))
-            solver.tui.mesh.check()
-            solver.tui.mesh.quality()
-            solver.tui.define.boundary_conditions.list_zones()
-            solver.tui.file.stop_transcript()
-            r = parse_transcript(trn.read_text(encoding="utf-8", errors="replace"))
-            oq = r["min_orthogonal_quality"]
-            r["ok"] = (oq is not None and oq >= thr and not r["non_positive_volume"]
-                       and not r["left_handed_faces"] and r["zones_ok"])
-            r["geom_id"] = gid
-            rows.append(r)
-            print(f"[{i}/{len(files)}] {gid}: minOQ={oq}  {'OK' if r['ok'] else 'HATA'}", flush=True)
+    mc = load_machine_config()
+    for i, msh in enumerate(files, 1):
+        gid = msh.name.split(".")[0]
+        trn = work / f"{gid}.trn"
+        trn.unlink(missing_ok=True)
+        try:
+            with fluent_solver(mc, cwd=work, processor_count=2) as solver:
+                solver.tui.define.models.axisymmetric("yes")
+                solver.tui.file.start_transcript(str(trn))
+                solver.tui.file.read_case(str(msh.resolve()))
+                solver.tui.mesh.check()
+                solver.tui.mesh.quality()
+                solver.tui.define.boundary_conditions.list_zones()
+                solver.tui.file.stop_transcript()
+            text = trn.read_text(encoding="utf-8", errors="replace")
+        except Exception as exc:  # noqa: BLE001 — bir dosyanın hatası diğerlerini durdurmaz
+            text, err = "", str(exc)
+        else:
+            err = ""
+        r = parse_transcript(text)
+        # Bu dosyanın gerçekten okunduğunun kanıtı: transkriptte adı geçen "Reading" satırı + hücre sayısı
+        r["read_ok"] = bool(re.search(r"Reading .*" + re.escape(msh.name), text)) and r["n_cells"] is not None
+        r["error"] = err
+        oq = r["min_orthogonal_quality"]
+        r["ok"] = (r["read_ok"] and oq is not None and oq >= thr and not r["non_positive_volume"]
+                   and not r["left_handed_faces"] and r["zones_ok"])
+        r["geom_id"] = gid
+        rows.append(r)
+        print(f"[{i}/{len(files)}] {gid}: hücre={r['n_cells']} minOQ={oq} read_ok={r['read_ok']}  {'OK' if r['ok'] else 'HATA'}", flush=True)
 
     df = pd.DataFrame(rows)
     out = DOCS_DIR / "mesh" / args.report
@@ -88,7 +102,7 @@ def main() -> int:
     bad = df[~df["ok"].astype(bool)]
     print(f"Toplam {len(df)}  |  hatalı {len(bad)}  |  min OQ = {df['min_orthogonal_quality'].min()}")
     if len(bad):
-        print(bad[["geom_id", "min_orthogonal_quality", "non_positive_volume", "left_handed_faces", "zones_ok"]].to_string(index=False))
+        print(bad[["geom_id", "read_ok", "min_orthogonal_quality", "non_positive_volume", "left_handed_faces", "zones_ok"]].to_string(index=False))
     return 0 if bad.empty else 1
 
 

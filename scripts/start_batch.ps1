@@ -11,7 +11,7 @@
 # Kullanım (proje kökünden):
 #   powershell -ExecutionPolicy Bypass -File scripts\start_batch.ps1 [-Campaign main] [-Workers 2] [-Cores 4] [-ExtraArgs "..."]
 # Durum:   .venv\Scripts\python.exe src\rcfd.py status
-# Durdur:  .venv\Scripts\python.exe src\rcfd.py stop     (her işçi mevcut koşusu bitince)
+# Durdur:  .venv\Scripts\python.exe src\rcfd.py stop     (TÜM işçiler mevcut koşusu bitince; yeniden başlatmadan önce `rcfd resume`)
 param(
     [string]$Campaign = "main",
     [int]$Workers = 0,

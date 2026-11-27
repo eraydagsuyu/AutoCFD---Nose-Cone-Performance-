@@ -71,9 +71,9 @@ def main_geoms(final_only: bool = True) -> list[str]:
 
 
 def geo_meta(gid: str) -> dict:
-    """gid: P16_L300 (ana) veya P03_L300_c04 (ön optimizasyon adayı)."""
+    """gid: P16_L300 (ana), P03_L300_c04 (ön optimizasyon adayı) veya P16_L300_g1 (GCI ağ seviyesi)."""
     npar = load_nose_params()
-    m = re.match(r"^P(\d{2})_L(\d{3})(?:_c\d+)?$", gid)
+    m = re.match(r"^P(\d{2})_L(\d{3})(?:_[cg]\d+)?$", gid)
     if not m:
         raise ValueError(f"Geçersiz geometri kimliği: {gid}")
     return {"geom_id": gid, "R": npar["fixed"]["R"], "L": int(m.group(2)) / 1000.0,
@@ -239,8 +239,9 @@ class Orchestrator:
                 with db.connect() as con:
                     ctl = self.check_control(con)
                     if ctl == "stop":
-                        db.set_control(con, "stop_after_current", None)
-                        db.event(con, "INFO", "stop", "stop_after_current isteğiyle durduruldu")
+                        # Bayrak burada TEMİZLENMEZ: tüm işçiler görsün (eskiden ilk okuyan temizliyor, yalnızca bir işçi duruyordu).
+                        # Yalnızca `rcfd resume` temizler.
+                        db.event(con, "INFO", "stop", f"stop_after_current isteğiyle durdu: {self.worker}")
                         return 0
                     if ctl == "pause":
                         self.heartbeat(con, "paused")

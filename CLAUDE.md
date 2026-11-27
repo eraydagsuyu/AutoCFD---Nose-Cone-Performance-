@@ -3,9 +3,15 @@
 Bu dosya her oturumda okunur. Buradaki kurallar ve sabitler bağlayıcıdır; değiştirmeden önce kullanıcıya sor.
 İletişim dili: **Türkçe** (teknik terimler ve kod tanımlayıcıları orijinal hâliyle).
 
-## 0. Güncel Durum (son güncelleme: 25.11.2026 00:45)
-**Üretim koşusu Ankara'da 25.11.2026 00:22'de başladı ve otonom çalışıyor** (Bölüm 0b). Eray aradan çekildi; tahmini bitiş ~29.11.2026
-(ilk 2 saatten sonra `src\tools\progress.py` kesin tahmini verir). İstanbul'daki `data/results.db` yalnızca test verisidir — kullanma.
+## 0. Güncel Durum (son güncelleme: 27.11.2026)
+**27.11 20:39 kullanıcı kararıyla durduruldu, düzeltmelerden sonra yeniden başlatıldı.** Durduğunda: preopt 368/368, main 623/1600
+(P01–P08 tam; P08_L400/L500 yarım). Durma anının tam kopyası İstanbul'da `data/ankara_20261127/` (DB, CSV, logs, fields; sayı+bayt
+doğrulandı). Doğruluk denetimi: büyük ayrışma yok (preopt↔main aynı geometri 59 çift, ort. fark %0,08; tek hafif aykırı P01_L200 v13 −%3).
+27.11 düzeltmeleri: `check_mesh_fluent.py` (çoklu dosyada yalnızca ilk mesh okunuyordu → 80 mesh yeniden kontrol edildi),
+FMG kurtarma basamağı (settings API), `rcfd stop` (tüm işçiler), `resume_batch` stop/pause'a saygı + GCI dalı.
+**Yeni:** `gci` kampanyası (runbook 6c, `src/tools/gci_build.py`, `gci_report.py`) → GCI sonrası ön optimizasyon 2. aşama
+(sınırda kalan 14/20 seçim; kullanıcı onaylı). Seçim değişirse etkilenen ana geometriler arşivlenip yeniden çözülür (kullanıcı onaylı).
+İstanbul'daki `data/results.db` yalnızca test verisidir — kullanma.
 
 **Ankara (üretim) — kurulu ve doğrulanmış:**
 - Makine: Yiğit'in bilgisayarı, Tailscale `yigit` 100.86.147.19, kullanıcı `YIGIT\yigit` (yönetici), Intel Core 5 210H (4P HT + 4E,
@@ -32,8 +38,7 @@ Bu dosya her oturumda okunur. Buradaki kurallar ve sabitler bağlayıcıdır; de
 5. `src\04_postprocess.py` (henüz yazılmadı — Bölüm 8 adım 9), sıralama + grafikler; Hassasiyet raporundaki öneriler (GCI, y⁺).
 6. Bitince Yiğit'e: Görev Zamanlayıcı görevlerini sil (`Unregister-ScheduledTask RocketCFD-*`), Tailscale/SSH erişimini kaldır.
 
-**Açık konular:** `04_postprocess.py` raporu; mesh bağımsızlığı (GCI) ve y⁺ çıkarımı; `rcfd stop` yalnızca bir işçiyi durdurur
-(bayrak ilk okuyan işçide temizleniyor — düzeltilmeli); transonik warm-start zinciri süresinin ölçümü (Ankara verisinden).
+**Açık konular:** `04_postprocess.py` raporu; GCI raporu (koşular Ankara'da) ve y⁺ çıkarımı; ön optimizasyon 2. aşama (GCI sonrası).
 
 ## 0b. Ankara Otonom Dönemi (25.11.2026 → koşu bitene kadar; kullanıcı onaylı)
 Kullanıcı (Eray) bu dönemde **ulaşılamaz**. Ankara'daki Claude Code (Yiğit'in terminalinde, Yiğit'in Pro hesabı) tek denetçidir.

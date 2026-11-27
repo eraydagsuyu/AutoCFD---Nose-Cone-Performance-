@@ -13,7 +13,7 @@ Müdahale (her biri --reason zorunlu; decided_by = agent | human):
   rcfd requeue --status needs_review [--regime transonic] [--geom P04_L400] [--set k=v] --reason "..."
   rcfd skip <run> --reason "..."
   rcfd priority <geom> <n>
-  rcfd pause | resume | stop       (stop = mevcut koşu bitince orkestratör durur)
+  rcfd pause | resume | stop       (stop = TÜM işçiler mevcut koşu bitince çıkar; bayrak `resume`'a kadar kalır)
 
 <run>: run_id veya GEOM:VEL (ör. P16_L300:17). Kullanım: .venv\\Scripts\\python.exe src\\rcfd.py <komut> ...
 """
@@ -271,6 +271,8 @@ def cmd_control(con, args) -> None:
         db.set_control(con, "stop_after_current", "1")
     db.event(con, "INFO", f"control_{args.cmd}", f"{_who(args)} tarafından")
     print(f"{args.cmd}: tamam (koşular arasında uygulanır).")
+    if args.cmd == "stop":
+        print("Tüm işçiler mevcut koşularını bitirince çıkar. Yeniden başlatmadan önce `rcfd resume` gerekir.")
 
 
 def main() -> int:

@@ -158,7 +158,9 @@ def initialize(solver, method: str, last_good: Path | None = None, init_file: Pa
     init.initialization_type = "hybrid"
     init.hybrid_initialize()
     if method == "fmg":
-        solver.tui.solve.initialize.fmg_initialize("yes")
+        # v241: TUI'de `solve/initialize/fmg_initialize` YOK (AttributeError, Ankara 26.11 — kurtarma basamağı 4 hep crash);
+        # doğru yol settings API: solution/initialization/fmg/fmg_initialize (hybrid sonrası).
+        init.fmg.fmg_initialize()
 
 
 # =========================================================================== izleme

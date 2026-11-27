@@ -96,7 +96,20 @@ git add config\nose_params.json docs meshes; git commit -m "Ön optimizasyon se�
   parametreli** mesh'tir ve yanlış geometriyle çözülür → `--enqueue-only`'den **önce** o dosyayı sil (Git'ten geri alınabilir);
   koşuları `mesh_error` olur, diğerleri çözülür. Başka aday seçmek geometri kararıdır → yapma, `docs/ankara_notes.md`'ye yaz.
 - Her mesh'in yeniden üretildiğini doğrula: 20 dosyanın değiştirilme zamanı `--select`'ten sonra olmalı.
-- `rcfd stop` kullanma: bayrağı ilk gören tek işçi durur (bilinen sınırlama).
+- `rcfd stop`: tüm işçiler mevcut koşuyu bitirince çıkar (27.11 düzeltildi); bayrak `rcfd resume`'a kadar kalır ve
+  `resume_batch.ps1` stop/pause açıkken işçi başlatmaz.
+
+## 6c. GCI çalışması (27.11.2026'dan itibaren; kullanıcı onaylı)
+- Kampanya `gci`: 3 geometri (P01/P16/P04 L300) × 3 ağ seviyesi (`_g1` ince, `_g2` = ana mesh, `_g3` kaba) × 4 hız = 36 koşu.
+  İşçi `gci_w1` (P çekirdekleri), `main_w1` E çekirdeklerinde devam eder. `gci_w1` kuyruk boşalınca çıkar; 30 dk'lık görev
+  ardından `main_w2`'yi başlatır (resume_batch dalı). `rcfd --campaign gci status` / `failures` ile izle.
+- `needs_review` → Bölüm 2 ile aynı teşhis. Ağ çok ince (`_g1`, ~230 bin hücre): koşu başına süre ~2,5× — `timeout` görürsen
+  `retry --init previous --set timeout_s=<×2>`. Mesh'e, seviyelere, geometri listesine **dokunma**.
+- GCI bitince **kendin bir şey başlatma**: `docs/ankara_notes.md`'ye "GCI tamam" yaz. Rapor (`src\tools\gci_report.py`) ve
+  ön optimizasyon 2. aşaması kullanıcı/İstanbul tarafından yapılır.
+- Ana kuyrukta serbest parametreli geometriler (P08_L400/L500, P19_*) düşük öncelikli (-1): 2. aşama seçimi değiştirebilir.
+- 27.11 düzeltmeleri: FMG kurtarma basamağı artık çalışıyor (settings API); `check_mesh_fluent.py` her dosyayı ayrı oturumda
+  kontrol eder; `rcfd stop` tüm işçileri durdurur.
 
 ## 7. İlerleme raporu
 `rcfd export` → `docs/results/` (runs ve Cd matrisi CSV). Günde bir kez commit + push:
