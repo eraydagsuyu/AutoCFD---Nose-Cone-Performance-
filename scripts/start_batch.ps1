@@ -44,6 +44,16 @@ for ($i = 1; $i -le $Workers; $i++) {
             continue
         }
     }
+    # Makine geneli sınır (28.11): tüm kampanyalardaki canlı işçi sayısı machine_config "workers"a ulaştıysa başlatma.
+    # (Ör. main_w2 çalışırken preopt_w1 başlatılırsa 3 Fluent oturumu olurdu — ölçüm: verim düşer, lisans 2.)
+    $maxW = if ($cfg.workers) { [int]$cfg.workers } else { 1 }
+    $live = @(Get-ChildItem (Join-Path $Root "data") -Filter "orchestrator_*.lock" -ErrorAction SilentlyContinue | Where-Object {
+        $p = 0; [int]::TryParse((Get-Content $_.FullName -Raw).Trim(), [ref]$p) | Out-Null
+        $p -gt 0 -and ((Get-Process -Id $p -ErrorAction SilentlyContinue).ProcessName -like "python*") })
+    if ($live.Count -ge $maxW) {
+        Write-Host "İşçi $w başlatılmadı: makinede zaten $($live.Count) canlı işçi var (sınır $maxW): $(($live | ForEach-Object { $_.BaseName -replace '^orchestrator_' }) -join ', ')"
+        continue
+    }
     $log = Join-Path $Root "logs\batch_${stamp}_$w.console.log"
     $cmd = "cmd.exe /c `"`"$py`" -u src\03_orchestrator.py --mode batch --campaign $Campaign --worker $w --cores $Cores $ExtraArgs > `"$log`" 2>&1`""
     $r = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{

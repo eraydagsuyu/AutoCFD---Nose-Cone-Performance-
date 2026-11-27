@@ -111,6 +111,14 @@ git add config\nose_params.json docs meshes; git commit -m "Ön optimizasyon se�
 - 27.11 düzeltmeleri: FMG kurtarma basamağı artık çalışıyor (settings API); `check_mesh_fluent.py` her dosyayı ayrı oturumda
   kontrol eder; `rcfd stop` tüm işçileri durdurur.
 
+## 6d. Ön optimizasyon 2. aşama (yalnızca kullanıcı/İstanbul başlatır — denetçi YAPMAZ)
+İstanbul: GCI raporu → `docs/preopt/stage2_spec.json` → `src\00_preopt.py --stage2 docs\preopt\stage2_spec.json` (mesh + candidates.json)
+→ her aday için ayrı `check_mesh_fluent.py` → commit + push. Ankara: `git pull` → `00_preopt.py --register-stage2` →
+`rcfd stop --worker main_w2` (yalnızca o işçi; P çekirdeklerini boşaltır) → main_w2 çıkınca `start_batch.ps1 -Campaign preopt -Workers 1`.
+`start_batch.ps1` makine genelinde `workers` (2) sınırını uygular: canlı işçi sayısı doluysa yeni işçi başlatmaz.
+Preopt bitince `--select` → seçimi değişen geometriler: arşiv (CSV/DB kopyası) + mesh yenileme + ana koşuları yeniden kuyruğa alma
+(kullanıcı onaylı, 27.11).
+
 ## 7. İlerleme raporu
 `rcfd export` → `docs/results/` (runs ve Cd matrisi CSV). Günde bir kez commit + push:
 `git add docs/results && git commit -m "sonuçlar: <tarih> ilerleme" && git push` — İstanbul tarafı buradan izler.

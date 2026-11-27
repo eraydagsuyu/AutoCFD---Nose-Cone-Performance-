@@ -5,6 +5,10 @@ Akış:
   2) --build   aday geometrileri + mesh'leri üretir (meshes/preopt/), docs/preopt/candidates.json yazar,
                koşuları 'preopt' kampanyasına kaydeder (temsili hızlar)
   3) çözüm     src/03_orchestrator.py --mode batch --campaign preopt   (Ankara veya kullanıcı onayıyla İstanbul)
+  3b) --stage2 <spec.json>   ikinci aşama (ince tarama) adayları: kimlik P02_L200_s01, aynı 'preopt' kampanyası,
+               meshes/preopt/; candidates.json'a EKLENİR (1. aşama korunur). Üretim makinesinde --register-stage2 ile kayıt.
+               spec: {"note": "...", "items": [{"pid": "02", "L": 0.2, "free": [{"rn_over_R": 0.4}, ...]}]}
+               --select 1. ve 2. aşama adaylarını birlikte değerlendirir.
   4) --select  her (profil, L) için K_kayıp'ı en düşük adayı seçer, config/nose_params.json 'selected' alanına yazar,
                docs/preopt_report.md üretir. Ardından: src/01_mesh_gen.py --geom <20 geometri> ile ana mesh'ler yenilenir.
 
@@ -110,7 +114,14 @@ def cmd_build(npar: dict) -> None:
             log.error("[%d/%d] %s HATA: %s", i, len(cs), c["cand_id"], exc)
             c["mesh"] = {"ok": False, "msg": str(exc)}
     PRE_DIR.mkdir(parents=True, exist_ok=True)
+    if CANDIDATES_JSON.exists():   # 2. aşama adaylarını koru (--build yeniden çalıştırılırsa kaybolmasın)
+        new_ids = {c["cand_id"] for c in cs}
+        cs += [c for c in json.loads(CANDIDATES_JSON.read_text(encoding="utf-8"))["candidates"] if c["cand_id"] not in new_ids]
     CANDIDATES_JSON.write_text(json.dumps({"vels": PREOPT_VELS, "candidates": cs}, indent=2), encoding="utf-8")
+    _register(ok_ids)
+
+
+def _register(ok_ids: list[str]) -> None:
     phys = load_physics()
     pts = []
     for p in load_velocities():
@@ -120,7 +131,67 @@ def cmd_build(npar: dict) -> None:
     with db.connect() as con:
         n = db.ensure_runs(con, CAMPAIGN, ok_ids, pts, mesh_version="preopt")
         db.event(con, "INFO", "queue", f"{n} ön optimizasyon koşusu kuyruğa eklendi")
-    print(f"{len(ok_ids)}/{len(cs)} aday mesh hazır; {n} koşu 'preopt' kampanyasına eklendi.")
+    print(f"{len(ok_ids)} aday mesh hazır; {n} koşu 'preopt' kampanyasına eklendi.")
+
+
+def _feasible(pid: str, L: float, R: float, fp: dict) -> bool:
+    if pid == "03":
+        L1, R1 = fp["L1_over_L"] * L, fp["R1_over_R"] * R
+        return 0 < L1 < L and 0 < R1 < R and R1 / L1 > (R - R1) / (L - L1)
+    for k in ("rn_over_R", "Rt_over_R"):
+        if k in fp:
+            return 0 < fp[k] < 1
+    if "a_over_L" in fp:
+        return fp["a_over_L"] > 0
+    return True
+
+
+def cmd_stage2(npar: dict, spec_path: Path) -> list[str]:
+    """2. aşama adayları: geometri + mesh (Python kalite kapısı) + candidates.json. Fluent kontrolü ve kayıt ayrı adımlar."""
+    from common.mesher import build_mesh
+    spec = json.loads(Path(spec_path).read_text(encoding="utf-8"))
+    R, rn_mesh = npar["fixed"]["R"], npar["mesh_tip_blunting"]["rn_mesh"]
+    defs = load_profile_defs()
+    meta = json.loads(CANDIDATES_JSON.read_text(encoding="utf-8"))
+    existing = {c["cand_id"]: c for c in meta["candidates"]}
+    out_dir = MESH_DIR / CAMPAIGN
+    ok_ids, new = [], []
+    for it in spec["items"]:
+        pid, L = it["pid"], float(it["L"])
+        base = f"P{pid}_L{round(L * 1000):03d}"
+        k = sum(1 for cid in existing if cid.startswith(base + "_s"))
+        for fp in it["free"]:
+            if set(fp) != set(GRID[pid]):
+                raise SystemExit(f"{base}: serbest parametre adları {sorted(GRID[pid])} olmalı, verilen {sorted(fp)}")
+            if not _feasible(pid, L, R, fp):
+                print(f"  {base} {fp}: kısıtı sağlamıyor, atlandı")
+                continue
+            if any(c["pid"] == pid and abs(c["L"] - L) < 1e-9 and c["free"] == fp for c in existing.values()):
+                print(f"  {base} {fp}: zaten aday, atlandı")
+                continue
+            k += 1
+            c = {"cand_id": f"{base}_s{k:02d}", "pid": pid, "L": L, "free": fp, "stage": 2}
+            path = out_dir / f"{c['cand_id']}.msh.gz"
+            try:
+                geo = build_geometry(defs[pid], L, R, _free_abs(c, R), rn_mesh)
+                if not geo.checks["ok"]:
+                    raise ValueError(f"geometri doğrulaması: {geo.checks}")
+                geo.id_override = c["cand_id"]
+                res = build_mesh(geo, npar["fixed"]["body_length"], path)
+                c["mesh"] = {"ok": res.ok, "cells": res.n_cells, "max_skew": round(res.max_skewness, 3), "msg": res.message}
+                print(f"  {c['cand_id']} {fp}: {'OK' if res.ok else res.message} hücre={res.n_cells}", flush=True)
+                if res.ok:
+                    ok_ids.append(c["cand_id"])
+            except Exception as exc:  # noqa: BLE001
+                c["mesh"] = {"ok": False, "msg": str(exc)}
+                print(f"  {c['cand_id']} {fp}: HATA {exc}")
+            existing[c["cand_id"]] = c
+            new.append(c)
+    meta["candidates"] = list(existing.values())
+    CANDIDATES_JSON.write_text(json.dumps(meta, indent=2), encoding="utf-8")
+    print(f"2. aşama: {len(new)} yeni aday, {len(ok_ids)} mesh OK. Sonraki: check_mesh_fluent.py (her aday) -> commit/push -> "
+          f"üretim makinesinde --register-stage2")
+    return ok_ids
 
 
 def cmd_select(npar: dict, allow_partial: bool) -> None:
@@ -175,6 +246,9 @@ def main() -> int:
     g.add_argument("--plan", action="store_true")
     g.add_argument("--build", action="store_true")
     g.add_argument("--select", action="store_true")
+    g.add_argument("--stage2", metavar="SPEC_JSON", help="2. aşama adaylarını üret (mesh + candidates.json)")
+    g.add_argument("--register-stage2", action="store_true",
+                   help="2. aşama adaylarını (mesh'leri Git'ten gelmiş) DB'ye kaydet — üretim makinesinde")
     ap.add_argument("--allow-partial", action="store_true", help="--select: eksik hızlı adayları da değerlendir")
     args = ap.parse_args()
     npar = load_nose_params()
@@ -182,6 +256,12 @@ def main() -> int:
         cmd_plan(npar)
     elif args.build:
         cmd_build(npar)
+    elif args.stage2:
+        cmd_stage2(npar, Path(args.stage2))
+    elif args.register_stage2:
+        meta = json.loads(CANDIDATES_JSON.read_text(encoding="utf-8"))
+        _register([c["cand_id"] for c in meta["candidates"]
+                   if c.get("stage") == 2 and (MESH_DIR / CAMPAIGN / f"{c['cand_id']}.msh.gz").exists()])
     else:
         cmd_select(npar, args.allow_partial)
     return 0

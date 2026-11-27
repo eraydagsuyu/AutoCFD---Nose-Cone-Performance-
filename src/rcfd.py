@@ -267,11 +267,15 @@ def cmd_control(con, args) -> None:
     elif args.cmd == "resume":
         db.set_control(con, "pause", None)
         db.set_control(con, "stop_after_current", None)
+    elif args.cmd == "stop" and getattr(args, "worker", None):
+        db.set_control(con, f"stop:{args.worker}", "1")
     elif args.cmd == "stop":
         db.set_control(con, "stop_after_current", "1")
     db.event(con, "INFO", f"control_{args.cmd}", f"{_who(args)} tarafından")
     print(f"{args.cmd}: tamam (koşular arasında uygulanır).")
-    if args.cmd == "stop":
+    if args.cmd == "stop" and getattr(args, "worker", None):
+        print(f"Yalnızca {args.worker} mevcut koşusunu bitirince çıkar (otomatik yeniden başlatma onu yeniden açabilir).")
+    elif args.cmd == "stop":
         print("Tüm işçiler mevcut koşularını bitirince çıkar. Yeniden başlatmadan önce `rcfd resume` gerekir.")
 
 
@@ -295,8 +299,9 @@ def main() -> int:
     p.add_argument("--reason", required=True); p.add_argument("--force", action="store_true")
     p = sp.add_parser("skip"); p.add_argument("run"); p.add_argument("--reason", required=True)
     p = sp.add_parser("priority"); p.add_argument("geom"); p.add_argument("n", type=int)
-    for c in ("pause", "resume", "stop"):
+    for c in ("pause", "resume"):
         sp.add_parser(c)
+    p = sp.add_parser("stop"); p.add_argument("--worker", help="yalnızca bu işçiyi durdur (ör. main_w2)")
     args = ap.parse_args()
     handlers = {"status": cmd_status, "failures": cmd_failures, "inspect": cmd_inspect, "events": cmd_events,
                 "profile": cmd_profile, "export": cmd_export, "retry": cmd_retry, "requeue": cmd_requeue,

@@ -73,7 +73,7 @@ def main_geoms(final_only: bool = True) -> list[str]:
 def geo_meta(gid: str) -> dict:
     """gid: P16_L300 (ana), P03_L300_c04 (ön optimizasyon adayı) veya P16_L300_g1 (GCI ağ seviyesi)."""
     npar = load_nose_params()
-    m = re.match(r"^P(\d{2})_L(\d{3})(?:_[cg]\d+)?$", gid)
+    m = re.match(r"^P(\d{2})_L(\d{3})(?:_[cgs]\d+)?$", gid)
     if not m:
         raise ValueError(f"Geçersiz geometri kimliği: {gid}")
     return {"geom_id": gid, "R": npar["fixed"]["R"], "L": int(m.group(2)) / 1000.0,
@@ -213,6 +213,9 @@ class Orchestrator:
     # ------------------------------------------------------------------ kontrol
     def check_control(self, con) -> str:
         if db.get_control(con, "stop_after_current") == "1":
+            return "stop"
+        if db.get_control(con, f"stop:{self.worker}") == "1":   # rcfd stop --worker <ad>: yalnızca bu işçi; bayrağı kendisi temizler
+            db.set_control(con, f"stop:{self.worker}", None)
             return "stop"
         if db.get_control(con, "pause") == "1":
             return "pause"
