@@ -1,0 +1,5 @@
+{"note": "28.11 GCI kuralı: sınırdaki seçimlerden en iyi-ikinci K farkı > 2·u_K (%2) olanlar. u_K ≈ %1 (ince-orta ağ Cd farkı ort.). P02_L200 %3,56, P19_L200 %6,55.",
+ "items": [
+  {"pid": "02", "L": 0.2, "free": [{"rn_over_R": 0.25}, {"rn_over_R": 0.4}, {"rn_over_R": 0.5}]},
+  {"pid": "19", "L": 0.2, "free": [{"a_over_L": 0.5}, {"a_over_L": 2.0}, {"a_over_L": 4.0}]}
+ ]}
