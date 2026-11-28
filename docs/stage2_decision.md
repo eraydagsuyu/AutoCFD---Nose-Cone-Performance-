@@ -18,3 +18,12 @@ Sınırda seçilmiş (profil, L) için en iyi ile ikinci aday arasındaki K fark
 ## Sonra
 2. aşama bitince `--select`; seçimi değişen geometri en fazla 2 (P02_L200, P19_L200). P02_L200 ana analizde çözülmüş →
 arşivle + mesh yenile + yeniden kuyruğa al (kullanıcı onaylı; kullanıcıyla birlikte yapılacak). P19_L200 henüz çözülmedi (öncelik -1).
+
+## 2. aşama sonucu (28.11 10:59, 20/20 koşu)
+| (profil, L) | mevcut seçim (K) | 2. aşamanın en iyisi (K) | kazanç | not |
+|---|---|---|---|---|
+| P02_L200 | rn/R 0,30 (1,57310) | rn/R 0,40 (1,56238) | %0,68 | 0,50 geometrik olarak yok → 0,40 yeni sınır; monoton |
+| P19_L200 | a/L 1,0 (1,53047) | a/L 4,0 (1,51357) | %1,10 | **monoton değil**: a/L 2,0 (1,54722) ikisinden de kötü → ağ gürültüsü |
+
+Her iki kazanç da 2·u_K = %2'nin altında → istatistiksel olarak ayırt edilemez. Öneri: mevcut seçimleri koru (yeniden koşu yok).
+Tam tablo (yerel): data/preopt_report_with_stage2.md. nose_params.json DEĞİŞTİRİLMEDİ (karar kullanıcıda).
